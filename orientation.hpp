@@ -30,15 +30,15 @@
 
 namespace filter::orientation {
     // function prototypes
-    void f3DOFTiltNED(double fR[][3], const double fGp[]);
+    void f3DOFTiltNED(double fR[][3], double fGp[]);
     void f3DOFTiltAndroid(double fR[][3], double fGp[]);
-    void f3DOFTiltWin8(double fR[][3], const double fGp[]);
-    void f3DOFMagnetometerMatrixNED(double fR[][3], const double fBc[]);
-    void f3DOFMagnetometerMatrixAndroid(double fR[][3], const double fBc[]);
+    void f3DOFTiltWin8(double fR[][3], double fGp[]);
+    void f3DOFMagnetometerMatrixNED(double fR[][3], double fBc[]);
+    void f3DOFMagnetometerMatrixAndroid(double fR[][3], double fBc[]);
     void f3DOFMagnetometerMatrixWin8(double fR[][3], double fBc[]);
-    void feCompassNED(double fR[][3], double* pfDelta, const double fBc[], const double fGp[]);
-    void feCompassAndroid(double fR[][3], double* pfDelta, const double fBc[], const double fGp[]);
-    void feCompassWin8(double fR[][3], double* pfDelta, const double fBc[], const double fGp[]);
+    void feCompassNED(double fR[][3], double* pfDelta, double fBc[], double fGp[]);
+    void feCompassAndroid(double fR[][3], double* pfDelta, double fBc[], double fGp[]);
+    void feCompassWin8(double fR[][3], double* pfDelta, double fBc[], double fGp[]);
     void fNEDAnglesDegFromRotationMatrix(double R[][3],
                                          double* pfPhiDeg,
                                          double* pfTheDeg,
@@ -58,15 +58,15 @@ namespace filter::orientation {
                                           double* pfRhoDeg,
                                           double* pfChiDeg);
     void fQuaternionFromRotationMatrix(double R[][3], struct fquaternion* pq);
-    void fRotationMatrixFromQuaternion(double R[][3], const struct fquaternion* pq);
+    void fRotationMatrixFromQuaternion(double R[][3], struct fquaternion* pq);
     void fLPFScalar(double* pfS, double* pfLPS, double flpf, int32 loopcounter);
-    void qAeqBxC(struct fquaternion* pqA, const struct fquaternion* pqB, const struct fquaternion* pqC);
-    void qAeqAxB(struct fquaternion* pqA, const struct fquaternion* pqB);
-    struct fquaternion qconjgAxB(const struct fquaternion* pqA, const struct fquaternion* pqB);
+    void qAeqBxC(struct fquaternion* pqA, struct fquaternion* pqB, struct fquaternion* pqC);
+    void qAeqAxB(struct fquaternion* pqA, struct fquaternion* pqB);
+    struct fquaternion qconjgAxB(struct fquaternion* pqA, struct fquaternion* pqB);
     void fqAeqNormqA(struct fquaternion* pqA);
     void fqAeq1(struct fquaternion* pqA);
     void fRotationVectorDegFromRotationMatrix(double R[][3], double rvecdeg[]);
-    void fQuaternionFromRotationVectorDeg(struct fquaternion* pq, const double rvecdeg[], double fscaling);
+    void fQuaternionFromRotationVectorDeg(struct fquaternion* pq, double rvecdeg[], double fscaling);
     void fRotationVectorDegFromQuaternion(struct fquaternion* pq, double rvecdeg[]);
     void fLPFOrientationQuaternion(struct fquaternion* pq,
                                    struct fquaternion* pLPq,

@@ -55,7 +55,7 @@ namespace filter::orientation {
     using filter::matrix::f3x3matrixAeqScalar;
 
     // Aerospace NED accelerometer 3DOF tilt function computing rotation matrix fR
-    void f3DOFTiltNED(double fR[][3], const double fGp[]) {
+    void f3DOFTiltNED(double fR[][3], double fGp[]) {
         // the NED self-consistency twist occurs at 90 deg pitch
 
         // local variables
@@ -120,7 +120,7 @@ namespace filter::orientation {
     }
 
     // Windows 8 accelerometer 3DOF tilt function computing rotation matrix fR
-    void f3DOFTiltWin8(double fR[][3], const double fGp[]) {
+    void f3DOFTiltWin8(double fR[][3], double fGp[]) {
         // the Win8 self-consistency twist occurs at 90 deg roll
 
         // local variables
@@ -185,7 +185,7 @@ namespace filter::orientation {
     }
 
     // Aerospace NED magnetometer 3DOF flat eCompass function computing rotation matrix fR
-    void f3DOFMagnetometerMatrixNED(double fR[][3], const double fBc[]) {
+    void f3DOFMagnetometerMatrixNED(double fR[][3], double fBc[]) {
         // local variables
         double fmodBxy = NAN;  // modulus of the x, y magnetometer readings
 
@@ -209,7 +209,7 @@ namespace filter::orientation {
     }
 
     // Android magnetometer 3DOF flat eCompass function computing rotation matrix fR
-    void f3DOFMagnetometerMatrixAndroid(double fR[][3], const double fBc[]) {
+    void f3DOFMagnetometerMatrixAndroid(double fR[][3], double fBc[]) {
         // local variables
         double fmodBxy = NAN;  // modulus of the x, y magnetometer readings
 
@@ -239,9 +239,9 @@ namespace filter::orientation {
     }
 
     // NED: 6DOF e-Compass function computing rotation matrix fR
-    void feCompassNED(double fR[][3], double* pfDelta, const double fBc[], const double fGp[]) {
+    void feCompassNED(double fR[][3], double* pfDelta, double fBc[], double fGp[]) {
         // local variables
-        double fmod[3];  // column moduli
+        double fmod[3];        // column moduli
         double fmodBc  = NAN;  // modulus of Bc
         double fGdotBc = NAN;  // dot product of vectors G.Bc
         double ftmp    = NAN;  // scratch variable
@@ -299,9 +299,9 @@ namespace filter::orientation {
     }
 
     // Android: 6DOF e-Compass function computing rotation matrix fR
-    void feCompassAndroid(double fR[][3], double* pfDelta, const double fBc[], const double fGp[]) {
+    void feCompassAndroid(double fR[][3], double* pfDelta, double fBc[], double fGp[]) {
         // local variables
-        double fmod[3];  // column moduli
+        double fmod[3];        // column moduli
         double fmodBc  = NAN;  // modulus of Bc
         double fGdotBc = NAN;  // dot product of vectors G.Bc
         double ftmp    = NAN;  // scratch variable
@@ -359,9 +359,9 @@ namespace filter::orientation {
     }
 
     // Win8: 6DOF e-Compass function computing rotation matrix fR
-    void feCompassWin8(double fR[][3], double* pfDelta, const double fBc[], const double fGp[]) {
+    void feCompassWin8(double fR[][3], double* pfDelta, double fBc[], double fGp[]) {
         // local variables
-        double fmod[3];  // column moduli
+        double fmod[3];        // column moduli
         double fmodBc  = NAN;  // modulus of Bc
         double fGdotBc = NAN;  // dot product of vectors G.Bc
         double ftmp    = NAN;  // scratch variable
@@ -598,7 +598,7 @@ namespace filter::orientation {
     }
 
     // computes normalized rotation quaternion from a rotation vector (deg)
-    void fQuaternionFromRotationVectorDeg(struct fquaternion* pq, const double rvecdeg[], double fscaling) {
+    void fQuaternionFromRotationVectorDeg(struct fquaternion* pq, double rvecdeg[], double fscaling) {
         double fetadeg    = NAN;  // rotation angle (deg)
         double fetarad    = NAN;  // rotation angle (rad)
         double fetarad2   = NAN;  // eta (rad)^2
@@ -700,8 +700,8 @@ namespace filter::orientation {
     }
 
     // compute the rotation matrix from an orientation quaternion
-    void fRotationMatrixFromQuaternion(double R[][3], const struct fquaternion* pq) {
-        double f2q = NAN;
+    void fRotationMatrixFromQuaternion(double R[][3], struct fquaternion* pq) {
+        double f2q    = NAN;
         double f2q0q0 = NAN;
         double f2q0q1 = NAN;
         double f2q0q2 = NAN;
@@ -931,7 +931,7 @@ namespace filter::orientation {
     }
 
     // function compute the quaternion product qA * qB
-    void qAeqBxC(struct fquaternion* pqA, const struct fquaternion* pqB, const struct fquaternion* pqC) {
+    void qAeqBxC(struct fquaternion* pqA, struct fquaternion* pqB, struct fquaternion* pqC) {
         pqA->q0 = pqB->q0 * pqC->q0 - pqB->q1 * pqC->q1 - pqB->q2 * pqC->q2 - pqB->q3 * pqC->q3;
         pqA->q1 = pqB->q0 * pqC->q1 + pqB->q1 * pqC->q0 + pqB->q2 * pqC->q3 - pqB->q3 * pqC->q2;
         pqA->q2 = pqB->q0 * pqC->q2 - pqB->q1 * pqC->q3 + pqB->q2 * pqC->q0 + pqB->q3 * pqC->q1;
@@ -941,7 +941,7 @@ namespace filter::orientation {
     }
 
     // function compute the quaternion product qA = qA * qB
-    void qAeqAxB(struct fquaternion* pqA, const struct fquaternion* pqB) {
+    void qAeqAxB(struct fquaternion* pqA, struct fquaternion* pqB) {
         struct fquaternion qProd;
 
         // perform the quaternion product
@@ -957,7 +957,7 @@ namespace filter::orientation {
     }
 
     // function compute the quaternion product conjg(qA) * qB
-    struct fquaternion qconjgAxB(const struct fquaternion* pqA, const struct fquaternion* pqB) {
+    struct fquaternion qconjgAxB(struct fquaternion* pqA, struct fquaternion* pqB) {
         struct fquaternion qProd;
 
         qProd.q0 = pqA->q0 * pqB->q0 + pqA->q1 * pqB->q1 + pqA->q2 * pqB->q2 + pqA->q3 * pqB->q3;

@@ -56,7 +56,7 @@ namespace filter::kalman {
                              //  struct AccelSensor* pthisAccel,
                              double accel_reading[3],
                              //  struct GyroSensor* pthisGyro,
-                             const double gyro_reading[3],
+                             double gyro_reading[3],
                              int ithisCoordSystem,
                              int iOverSampleRatio);
 }  // namespace filter::kalman
