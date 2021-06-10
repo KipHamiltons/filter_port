@@ -13,7 +13,7 @@ int main() {
     std::vector<std::array<float, 4>> quaternions{};
 
     char comma;
-    std::ifstream ifs("../../gyroscope.csv");
+    std::ifstream ifs("../gyroscope.csv");
     while (ifs.good()) {
         std::array<float, 3> gyro;
         ifs >> gyro[0] >> comma >> gyro[1] >> comma >> gyro[2];
@@ -22,7 +22,7 @@ int main() {
         }
     }
     ifs.close();
-    ifs.open("../../accelerometer.csv");
+    ifs.open("../accelerometer.csv");
     while (ifs.good()) {
         std::array<float, 3> acc;
         ifs >> acc[0] >> comma >> acc[1] >> comma >> acc[2];
@@ -31,7 +31,7 @@ int main() {
         }
     }
     ifs.close();
-    ifs.open("../../quaternion.csv");
+    ifs.open("../quaternion.csv");
     while (ifs.good()) {
         std::array<float, 4> quat{};
         ifs >> quat[0] >> comma >> quat[1] >> comma >> quat[2] >> comma >> quat[3];
@@ -50,5 +50,6 @@ int main() {
     // static constexpr int16 COORDINATE_SYSTEM = ANDROID;
     // static constexpr int16 SAMPLE_RATE       = 200;
     // static constexpr int16 DECIMATION_FACTOR = 1;
-    // filter::kalman::fInit_6DOF_GY_KALMAN(&filter, SAMPLE_RATE, DECIMATION_FACTOR);
+    // filter::kalman::fInit_6DOF_GY_KALMAN(&filter, SAMPLE_RATE,
+    // DECIMATION_FACTOR);
 }
