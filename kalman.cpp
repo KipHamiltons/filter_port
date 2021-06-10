@@ -52,13 +52,13 @@ namespace filter::kalman {
     using filter::orientation::fRotationMatrixFromQuaternion;
     using filter::orientation::fRotationVectorDegFromQuaternion;
     using filter::orientation::fWin8AnglesDegFromRotationMatrix;
-    using filter::orientation::qAeqAxB;
     using filter::orientation::qAeqBxC;
 
 
     // function initalizes the 6DOF accel + gyro Kalman filter algorithm
     void fInit_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN* pthisSV, int iSensorFS, int iOverSampleRatio) {
-        int8 i, j;  // loop counters
+        int8 i = 0;
+        int8 j = 0;  // loop counters
 
         // reset the flag denoting that a first 6DOpthisSVtion lock has been achieved
         pthisSV->iFirstOrientationLock = 0;
@@ -111,8 +111,6 @@ namespace filter::kalman {
 
         // clear the reset flag
         pthisSV->resetflag = false;
-
-        return;
     }  // end fInit_6DOF_GY_KALMAN
 
     // 6DOF accel + gyro Kalman filter algorithm
@@ -122,26 +120,28 @@ namespace filter::kalman {
                              //  struct GyroSensor* pthisGyro,
                              double gyro_reading[3],
                              int ithisCoordSystem,
-                             int iOverSampleRatio) {
+                             int /*iOverSampleRatio*/) {
         // local arrays and scalars
         double rvec[3];         // rotation vector
         double ftmpA9x3[9][3];  // scratch array
 
         // assorted array pointers
-        double* pfPPlus9x9kj;
-        double* pfPPlus9x9ij;
-        double* pfK9x3ij;
-        double* pfK9x3ik;
-        double* pftmpA9x3ik;
-        double* pftmpA9x3ij;
-        double* pftmpA9x3kj;
-        double* pfQw9x9ij;
-        double* pfQw9x9ik;
-        double* pfQw9x9kj;
-        double* pfC3x9ik;
-        double* pfC3x9jk;
+        double* pfPPlus9x9kj = nullptr;
+        double* pfPPlus9x9ij = nullptr;
+        double* pfK9x3ij     = nullptr;
+        double* pfK9x3ik     = nullptr;
+        double* pftmpA9x3ik  = nullptr;
+        double* pftmpA9x3ij  = nullptr;
+        double* pftmpA9x3kj  = nullptr;
+        double* pfQw9x9ij    = nullptr;
+        double* pfQw9x9ik    = nullptr;
+        double* pfQw9x9kj    = nullptr;
+        double* pfC3x9ik     = nullptr;
+        double* pfC3x9jk     = nullptr;
 
-        int8 i, j, k;  // loop counters
+        int8 i = 0;
+        int8 j = 0;
+        int8 k = 0;  // loop counters
 
         // working arrays for 3x3 matrix inversion
         double* pfRows[3];
@@ -150,13 +150,13 @@ namespace filter::kalman {
         int8 iPivot[3];
 
         // do a reset and return if requested
-        if (pthisSV->resetflag) {
+        if (pthisSV->resetflag != 0) {
             fInit_6DOF_GY_KALMAN(pthisSV, SENSORFS, OVERSAMPLE_RATIO);
             return;
         }
 
         // do a once-only orientation lock to accelerometer tilt
-        if (!pthisSV->iFirstOrientationLock) {
+        if (pthisSV->iFirstOrientationLock == 0) {
             // get the 3DOF orientation matrix and initial inclination angle
             if (ithisCoordSystem == NED) {
                 // call NED tilt function
@@ -299,12 +299,15 @@ namespace filter::kalman {
                 // sum matrix products over inner loop over k
                 for (k = 0; k < 9; k++) {
                     if ((*pfQw9x9ik != 0.0F) && (*pfC3x9jk != 0.0F)) {
-                        if (*pfC3x9jk == 1.0F)
+                        if (*pfC3x9jk == 1.0F) {
                             *pftmpA9x3ij += *pfQw9x9ik;
-                        else if (*pfC3x9jk == -1.0F)
+                        }
+                        else if (*pfC3x9jk == -1.0F) {
                             *pftmpA9x3ij -= *pfQw9x9ik;
-                        else
+                        }
+                        else {
                             *pftmpA9x3ij += *pfQw9x9ik * *pfC3x9jk;
+                        }
                     }
 
                     // increment pfC3x9jk and pfQw9x9ik for next iteration of k
@@ -341,12 +344,15 @@ namespace filter::kalman {
                 // sum matrix products over inner loop over k
                 for (k = 0; k < 9; k++) {
                     if ((*pfC3x9ik != 0.0F) && (*pftmpA9x3kj != 0.0F)) {
-                        if (*pfC3x9ik == 1.0F)
+                        if (*pfC3x9ik == 1.0F) {
                             *pfPPlus9x9ij += *pftmpA9x3kj;
-                        else if (*pfC3x9ik == -1.0F)
+                        }
+                        else if (*pfC3x9ik == -1.0F) {
                             *pfPPlus9x9ij -= *pftmpA9x3kj;
-                        else
+                        }
+                        else {
                             *pfPPlus9x9ij += *pfC3x9ik * *pftmpA9x3kj;
+                        }
                     }
 
                     // update pfC3x9ik and pftmpA9x3kj for next iteration of k
@@ -522,12 +528,15 @@ namespace filter::kalman {
                 // sum matrix products over inner loop over k
                 for (k = 0; k < 9; k++) {
                     if ((*pfC3x9ik != 0.0F) && (*pfQw9x9kj != 0.0F)) {
-                        if (*pfC3x9ik == 1.0F)
+                        if (*pfC3x9ik == 1.0F) {
                             *pfPPlus9x9ij += *pfQw9x9kj;
-                        else if (*pfC3x9ik == -1.0F)
+                        }
+                        else if (*pfC3x9ik == -1.0F) {
                             *pfPPlus9x9ij -= *pfQw9x9kj;
-                        else
+                        }
+                        else {
                             *pfPPlus9x9ij += *pfC3x9ik * *pfQw9x9kj;
+                        }
                     }
 
                     // update pfC3x9ik and pfQw9x9kj for next iteration of k
@@ -622,6 +631,5 @@ namespace filter::kalman {
             pthisSV->fQw9x9[i + 6][i + 6] = pthisSV->fcasq * pthisSV->fPPlus9x9[i + 6][i + 6] + FQWA_6DOF_GY_KALMAN;
         }
 
-        return;
     }  // end fRun_6DOF_GY_KALMAN
 }  // namespace filter::kalman

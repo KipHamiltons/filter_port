@@ -17,7 +17,7 @@ if(ENABLE_CLANG_TIDY)
   add_custom_target(
     apply-clang-tidy
     COMMAND clang-apply-replacements --format --style=file --style-config="${PROJECT_SOURCE_DIR}"
-            --remove-change-desc-files "${PROJECT_BINARY_DIR}/clang-tidy-fixes"
+            "${PROJECT_BINARY_DIR}/clang-tidy-fixes"
     COMMENT "Applying fixes from clang-tidy to the codebase."
   )
 endif()

@@ -3,6 +3,7 @@
 #include <Eigen/Geometry>
 #include <array>
 #include <cmath>
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <numeric>
@@ -10,14 +11,13 @@
 
 #include "build.hpp"
 #include "kalman.hpp"
-#include "stdio.h"
 
 int main() {
     std::vector<Eigen::Vector3d> gyro_readings{};
     std::vector<Eigen::Vector3d> acc_readings{};
     std::vector<Eigen::Quaternion<double>> quaternions{};
 
-    char comma;
+    char comma = 0;
     std::ifstream ifs("../gyroscope.csv");
     while (ifs.good()) {
         Eigen::Vector3d gyro;

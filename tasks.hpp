@@ -88,9 +88,9 @@ namespace filter::tasks {
     void ApplyAccelHAL(struct AccelSensor* pthisAccel);
     void ApplyMagHAL(struct MagSensor* pthisMag);
     void ApplyGyroHAL(struct GyroSensor* pthisGyro, int16 irow);
-    void RdSensData_Init(void);
-    void RdSensData_Run(void);
-    void Fusion_Init(void);
-    void Fusion_Run(void);
+    void RdSensData_Init();
+    void RdSensData_Run();
+    void Fusion_Init();
+    void Fusion_Run();
 }  // namespace filter::tasks
 #endif  // #ifndef TASKS_HPP

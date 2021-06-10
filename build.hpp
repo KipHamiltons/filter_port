@@ -152,14 +152,14 @@
 
 // type definitions
 // these re-define (but with no changes) those in MQX-Lite PE-Types.h for Kinetis
-typedef signed char int8;
-typedef unsigned char uint8;
-typedef signed short int int16;
-typedef unsigned short int uint16;
-typedef signed long int int32;
-typedef unsigned long int uint32;
+using int8   = signed char;
+using uint8  = unsigned char;
+using int16  = short;
+using uint16 = unsigned short;
+using int32  = long;
+using uint32 = unsigned long;
 // the quaternion type to be transmitted
-typedef enum quaternion { Q3, Q3M, Q3G, Q6MA, Q6AG, Q9 } quaternion_type;
+using quaternion_type = enum quaternion { Q3, Q3M, Q3G, Q6MA, Q6AG, Q9 };
 
 // quaternion structure definition
 struct fquaternion {

@@ -30,6 +30,7 @@
 #include <cmath>
 
 #include "build.hpp"
+#include "math.h"
 // #include "stdio.h"
 // #include "stdlib.h"
 // #include "string.h"
@@ -41,8 +42,9 @@
 namespace filter::matrix {
     // function sets the 3x3 matrix A to the identity matrix
     void f3x3matrixAeqI(double A[][3]) {
-        double* pAij;  // pointer to A[i][j]
-        int8 i, j;     // loop counters
+        double* pAij = nullptr;  // pointer to A[i][j]
+        int8 i       = 0;
+        int8 j       = 0;  // loop counters
 
         for (i = 0; i < 3; i++) {
             // set pAij to &A[i][j=0]
@@ -52,15 +54,15 @@ namespace filter::matrix {
             }
             A[i][i] = 1.0F;
         }
-        return;
     }
 
     // function sets the matrix A to the identity matrix
     void fmatrixAeqI(double* A[], int16 rc) {
         // rc = rows and columns in A
 
-        double* pAij;  // pointer to A[i][j]
-        int8 i, j;     // loop counters
+        double* pAij = nullptr;  // pointer to A[i][j]
+        int8 i       = 0;
+        int8 j       = 0;  // loop counters
 
         for (i = 0; i < rc; i++) {
             // set pAij to &A[i][j=0]
@@ -70,13 +72,13 @@ namespace filter::matrix {
             }
             A[i][i] = 1.0F;
         }
-        return;
     }
 
     // function sets every entry in the 3x3 matrix A to a constant scalar
     void f3x3matrixAeqScalar(double A[][3], double Scalar) {
-        double* pAij;  // pointer to A[i][j]
-        int8 i, j;     // counters
+        double* pAij = nullptr;  // pointer to A[i][j]
+        int8 i       = 0;
+        int8 j       = 0;  // counters
 
         for (i = 0; i < 3; i++) {
             // set pAij to &A[i][j=0]
@@ -85,13 +87,13 @@ namespace filter::matrix {
                 *(pAij++) = Scalar;
             }
         }
-        return;
     }
 
     // function multiplies all elements of 3x3 matrix A by the specified scalar
     void f3x3matrixAeqAxScalar(double A[][3], double Scalar) {
-        double* pAij;  // pointer to A[i][j]
-        int8 i, j;     // loop counters
+        double* pAij = nullptr;  // pointer to A[i][j]
+        int8 i       = 0;
+        int8 j       = 0;  // loop counters
 
         for (i = 0; i < 3; i++) {
             // set pAij to &A[i][j=0]
@@ -100,14 +102,13 @@ namespace filter::matrix {
                 *(pAij++) *= Scalar;
             }
         }
-
-        return;
     }
 
     // function negates all elements of 3x3 matrix A
     void f3x3matrixAeqMinusA(double A[][3]) {
-        double* pAij;  // pointer to A[i][j]
-        int8 i, j;     // loop counters
+        double* pAij = nullptr;  // pointer to A[i][j]
+        int8 i       = 0;
+        int8 j       = 0;  // loop counters
 
         for (i = 0; i < 3; i++) {
             // set pAij to &A[i][j=0]
@@ -117,17 +118,15 @@ namespace filter::matrix {
                 pAij++;
             }
         }
-
-        return;
     }
 
     // function directly calculates the symmetric inverse of a symmetric 3x3 matrix
     // only the on and above diagonal terms in B are used and need to be specified
     void f3x3matrixAeqInvSymB(double A[][3], double B[][3]) {
-        double fB11B22mB12B12;  // B[1][1] * B[2][2] - B[1][2] * B[1][2]
-        double fB12B02mB01B22;  // B[1][2] * B[0][2] - B[0][1] * B[2][2]
-        double fB01B12mB11B02;  // B[0][1] * B[1][2] - B[1][1] * B[0][2]
-        double ftmp;            // determinant and then reciprocal
+        double fB11B22mB12B12 = NAN;  // B[1][1] * B[2][2] - B[1][2] * B[1][2]
+        double fB12B02mB01B22 = NAN;  // B[1][2] * B[0][2] - B[0][1] * B[2][2]
+        double fB01B12mB11B02 = NAN;  // B[0][1] * B[1][2] - B[1][1] * B[0][2]
+        double ftmp           = NAN;  // determinant and then reciprocal
 
         // calculate useful products
         fB11B22mB12B12 = B[1][1] * B[2][2] - B[1][2] * B[1][2];
@@ -151,7 +150,6 @@ namespace filter::matrix {
             // provide the identity matrix if the determinant is zero
             f3x3matrixAeqI(A);
         }
-        return;
     }
 
     // function calculates the determinant of a 3x3 matrix
@@ -171,7 +169,11 @@ namespace filter::matrix {
 #define NITERATIONS 15
 
         // various trig functions of the jacobi rotation angle phi
-        double cot2phi, tanhalfphi, tanphi, sinphi, cosphi;
+        double cot2phi;
+        double tanhalfphi;
+        double tanphi;
+        double sinphi;
+        double cosphi;
         // scratch variable to prevent over-writing during rotations
         double ftmp;
         // residue from remaining non-zero above diagonal terms

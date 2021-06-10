@@ -37,10 +37,12 @@
 // maximum error is 10.29E-6 deg
 double filter::approximations::fasin_deg(double x) {
     // for robustness, check for invalid argument
-    if (x >= 1.0F)
+    if (x >= 1.0F) {
         return 90.0F;
-    if (x <= -1.0F)
+    }
+    if (x <= -1.0F) {
         return -90.0F;
+    }
 
     // call the atan which will return an angle in the correct range -90 to 90 deg
     // this line cannot fail from division by zero or negative square root since |x| < 1
@@ -52,27 +54,31 @@ double filter::approximations::fasin_deg(double x) {
 // maximum error is 14.67E-6 deg
 double filter::approximations::facos_deg(double x) {
     // for robustness, check for invalid arguments
-    if (x >= 1.0F)
+    if (x >= 1.0F) {
         return 0.0F;
-    if (x <= -1.0F)
+    }
+    if (x <= -1.0F) {
         return 180.0F;
+    }
 
     // call the atan which will return an angle in the incorrect range -90 to 90 deg
     // these lines cannot fail from division by zero or negative square root
-    if (x == 0.0F)
+    if (x == 0.0F) {
         return 90.0F;
-    if (x > 0.0F)
+    }
+    if (x > 0.0F) {
         return fatan_deg((std::sqrt(1.0F - x * x) / x));
+    }
     return 180.0F + fatan_deg((std::sqrt(1.0F - x * x) / x));
 }
 
 // function returns angle in range -90 to 90 deg
 // maximum error is 9.84E-6 deg
 double filter::approximations::fatan_deg(double x) {
-    double fangledeg;   // compute computed (deg)
-    int8 ixisnegative;  // argument x is negative
-    int8 ixexceeds1;    // argument x is greater than 1.0
-    int8 ixmapped;      // argument in range tan(15 deg) to tan(45 deg)=1.0
+    double fangledeg  = NAN;  // compute computed (deg)
+    int8 ixisnegative = 0;    // argument x is negative
+    int8 ixexceeds1   = 0;    // argument x is greater than 1.0
+    int8 ixmapped     = 0;    // argument in range tan(15 deg) to tan(45 deg)=1.0
 
 #define TAN15DEG 0.26794919243F  // tan(15 deg) = 2 - sqrt(3)
 #define TAN30DEG 0.57735026919F  // tan(30 deg) = 1/sqrt(3)
@@ -106,12 +112,15 @@ double filter::approximations::fatan_deg(double x) {
     fangledeg = fatan_15deg(x);
 
     // undo the distortions applied earlier to obtain -90 deg <= angle <= 90 deg
-    if (ixmapped)
+    if (ixmapped != 0) {
         fangledeg += 30.0F;
-    if (ixexceeds1)
+    }
+    if (ixexceeds1 != 0) {
         fangledeg = 90.0F - fangledeg;
-    if (ixisnegative)
+    }
+    if (ixisnegative != 0) {
         fangledeg = -fangledeg;
+    }
 
     return (fangledeg);
 }
@@ -122,22 +131,26 @@ double filter::approximations::fatan2_deg(double y, double x) {
     // check for zero x to avoid division by zero
     if (x == 0.0F) {
         // return 90 deg for positive y
-        if (y > 0.0F)
+        if (y > 0.0F) {
             return 90.0F;
+        }
         // return -90 deg for negative y
-        if (y < 0.0F)
+        if (y < 0.0F) {
             return -90.0F;
+        }
         // otherwise y= 0.0 and return 0 deg (invalid arguments)
         return 0.0F;
     }
 
     // from here onwards, x is guaranteed to be non-zero
     // compute atan2 for quadrant 1 (0 to 90 deg) and quadrant 4 (-90 to 0 deg)
-    if (x > 0.0F)
+    if (x > 0.0F) {
         return (fatan_deg(y / x));
+    }
     // compute atan2 for quadrant 2 (90 to 180 deg)
-    if ((x < 0.0F) && (y > 0.0F))
+    if ((x < 0.0F) && (y > 0.0F)) {
         return (180.0F + fatan_deg(y / x));
+    }
     // compute atan2 for quadrant 3 (-180 to -90 deg)
     return (-180.0F + fatan_deg(y / x));
 }
@@ -146,7 +159,7 @@ double filter::approximations::fatan2_deg(double y, double x) {
 // -tan(15 deg) to tan(15 deg) giving an output -15 deg <= angle <= 15 deg
 // using modified Pade[3/2] approximation
 double filter::approximations::fatan_15deg(double x) {
-    double x2;  // x^2
+    double x2 = NAN;  // x^2
 
 #define PADE_A 96.644395816F  // theoretical Pade[3/2] value is 5/3*180/PI=95.49296
 #define PADE_B 25.086941612F  // theoretical Pade[3/2] value is 4/9*180/PI=25.46479

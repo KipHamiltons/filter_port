@@ -30,15 +30,15 @@
 
 namespace filter::orientation {
     // function prototypes
-    void f3DOFTiltNED(double fR[][3], double fGp[]);
+    void f3DOFTiltNED(double fR[][3], const double fGp[]);
     void f3DOFTiltAndroid(double fR[][3], double fGp[]);
-    void f3DOFTiltWin8(double fR[][3], double fGp[]);
-    void f3DOFMagnetometerMatrixNED(double fR[][3], double fBc[]);
-    void f3DOFMagnetometerMatrixAndroid(double fR[][3], double fBc[]);
+    void f3DOFTiltWin8(double fR[][3], const double fGp[]);
+    void f3DOFMagnetometerMatrixNED(double fR[][3], const double fBc[]);
+    void f3DOFMagnetometerMatrixAndroid(double fR[][3], const double fBc[]);
     void f3DOFMagnetometerMatrixWin8(double fR[][3], double fBc[]);
-    void feCompassNED(double fR[][3], double* pfDelta, double fBc[], double fGp[]);
-    void feCompassAndroid(double fR[][3], double* pfDelta, double fBc[], double fGp[]);
-    void feCompassWin8(double fR[][3], double* pfDelta, double fBc[], double fGp[]);
+    void feCompassNED(double fR[][3], double* pfDelta, const double fBc[], const double fGp[]);
+    void feCompassAndroid(double fR[][3], double* pfDelta, const double fBc[], const double fGp[]);
+    void feCompassWin8(double fR[][3], double* pfDelta, const double fBc[], const double fGp[]);
     void fNEDAnglesDegFromRotationMatrix(double R[][3],
                                          double* pfPhiDeg,
                                          double* pfTheDeg,
