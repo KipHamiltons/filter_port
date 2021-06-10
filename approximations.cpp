@@ -35,7 +35,7 @@
 // function returns an approximation to angle(deg)=asin(x) for x in the range -1 <= x <= 1
 // and returns -90 <= angle <= 90 deg
 // maximum error is 10.29E-6 deg
-float filter::approximations::fasin_deg(float x) {
+double filter::approximations::fasin_deg(double x) {
     // for robustness, check for invalid argument
     if (x >= 1.0F)
         return 90.0F;
@@ -50,7 +50,7 @@ float filter::approximations::fasin_deg(float x) {
 // function returns an approximation to angle(deg)=acos(x) for x in the range -1 <= x <= 1
 // and returns 0 <= angle <= 180 deg
 // maximum error is 14.67E-6 deg
-float filter::approximations::facos_deg(float x) {
+double filter::approximations::facos_deg(double x) {
     // for robustness, check for invalid arguments
     if (x >= 1.0F)
         return 0.0F;
@@ -68,8 +68,8 @@ float filter::approximations::facos_deg(float x) {
 
 // function returns angle in range -90 to 90 deg
 // maximum error is 9.84E-6 deg
-float filter::approximations::fatan_deg(float x) {
-    float fangledeg;    // compute computed (deg)
+double filter::approximations::fatan_deg(double x) {
+    double fangledeg;   // compute computed (deg)
     int8 ixisnegative;  // argument x is negative
     int8 ixexceeds1;    // argument x is greater than 1.0
     int8 ixmapped;      // argument in range tan(15 deg) to tan(45 deg)=1.0
@@ -118,7 +118,7 @@ float filter::approximations::fatan_deg(float x) {
 
 // function returns approximate atan2 angle in range -180 to 180 deg
 // maximum error is 14.58E-6 deg
-float filter::approximations::fatan2_deg(float y, float x) {
+double filter::approximations::fatan2_deg(double y, double x) {
     // check for zero x to avoid division by zero
     if (x == 0.0F) {
         // return 90 deg for positive y
@@ -145,8 +145,8 @@ float filter::approximations::fatan2_deg(float y, float x) {
 // approximation to inverse tan function (deg) for x in range
 // -tan(15 deg) to tan(15 deg) giving an output -15 deg <= angle <= 15 deg
 // using modified Pade[3/2] approximation
-float filter::approximations::fatan_15deg(float x) {
-    float x2;  // x^2
+double filter::approximations::fatan_15deg(double x) {
+    double x2;  // x^2
 
 #define PADE_A 96.644395816F  // theoretical Pade[3/2] value is 5/3*180/PI=95.49296
 #define PADE_B 25.086941612F  // theoretical Pade[3/2] value is 4/9*180/PI=25.46479

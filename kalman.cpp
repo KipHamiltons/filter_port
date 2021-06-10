@@ -65,9 +65,9 @@ namespace filter::kalman {
         // reset the flag denoting that a first 6DOpthisSVtion lock has been achieved
         pthisSV->iFirstOrientationLock = 0;
 
-        // compute and store useful product terms to save floating point calculations later
-        pthisSV->fFastdeltat = 1.0F / (float) iSensorFS;
-        pthisSV->fdeltat     = (float) iOverSampleRatio * pthisSV->fFastdeltat;
+        // compute and store useful product terms to save doubleing point calculations later
+        pthisSV->fFastdeltat = 1.0F / (double) iSensorFS;
+        pthisSV->fdeltat     = (double) iOverSampleRatio * pthisSV->fFastdeltat;
         pthisSV->fdeltatsq   = pthisSV->fdeltat * pthisSV->fdeltat;
         pthisSV->fcasq       = FCA_6DOF_GY_KALMAN * FCA_6DOF_GY_KALMAN;
         pthisSV->fQwbplusQvG = FQWB_6DOF_GY_KALMAN + FQVG_6DOF_GY_KALMAN;
@@ -120,33 +120,33 @@ namespace filter::kalman {
     // 6DOF accel + gyro Kalman filter algorithm
     void fRun_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN* pthisSV,
                              //  struct AccelSensor* pthisAccel,
-                             float accel_reading[3],
+                             double accel_reading[3],
                              //  struct GyroSensor* pthisGyro,
-                             float gyro_reading[3],
+                             double gyro_reading[3],
                              int16 ithisCoordSystem,
                              int16 iOverSampleRatio) {
         // local arrays and scalars
-        float rvec[3];         // rotation vector
-        float ftmpA9x3[9][3];  // scratch array
+        double rvec[3];         // rotation vector
+        double ftmpA9x3[9][3];  // scratch array
 
         // assorted array pointers
-        float* pfPPlus9x9kj;
-        float* pfPPlus9x9ij;
-        float* pfK9x3ij;
-        float* pfK9x3ik;
-        float* pftmpA9x3ik;
-        float* pftmpA9x3ij;
-        float* pftmpA9x3kj;
-        float* pfQw9x9ij;
-        float* pfQw9x9ik;
-        float* pfQw9x9kj;
-        float* pfC3x9ik;
-        float* pfC3x9jk;
+        double* pfPPlus9x9kj;
+        double* pfPPlus9x9ij;
+        double* pfK9x3ij;
+        double* pfK9x3ik;
+        double* pftmpA9x3ik;
+        double* pftmpA9x3ij;
+        double* pftmpA9x3kj;
+        double* pfQw9x9ij;
+        double* pfQw9x9ik;
+        double* pfQw9x9kj;
+        double* pfC3x9ik;
+        double* pfC3x9jk;
 
         int8 i, j, k;  // loop counters
 
         // working arrays for 3x3 matrix inversion
-        float* pfRows[3];
+        double* pfRows[3];
         int8 iColInd[3];
         int8 iRowInd[3];
         int8 iPivot[3];
@@ -206,7 +206,7 @@ namespace filter::kalman {
         // for (j = 0; j < iOverSampleRatio; j++) {
         //     // compute the incremental fast (typically 200Hz) rotation vector rvec (deg)
         //     for (i = X; i <= Z; i++) {
-        //         rvec[i] = (((float) pthisGyro->iYpFast[j][i] * pthisGyro->fDegPerSecPerCount) - pthisSV->fbPl[i])
+        //         rvec[i] = (((double) pthisGyro->iYpFast[j][i] * pthisGyro->fDegPerSecPerCount) - pthisSV->fbPl[i])
         //                   * pthisSV->fFastdeltat;
         //     }
 

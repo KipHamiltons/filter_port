@@ -163,10 +163,10 @@ typedef enum quaternion { Q3, Q3M, Q3G, Q6MA, Q6AG, Q9 } quaternion_type;
 
 // quaternion structure definition
 struct fquaternion {
-    float q0;  // scalar component
-    float q1;  // x vector component
-    float q2;  // y vector component
-    float q3;  // z vector component
+    double q0;  // scalar component
+    double q1;  // x vector component
+    double q2;  // y vector component
+    double q3;  // z vector component
 };
 
 // We only care about fGpFast[3], so we'll just use that instead of this struct
@@ -174,9 +174,9 @@ struct fquaternion {
 // // accelerometer sensor structure definition
 // struct AccelSensor {
 //     int32 iSumGpFast[3];  // sum of fast measurements
-//     float fGpFast[3];     // fast (typically 200Hz) readings (g)
-//     float fGp[3];         // slow (typically 25Hz) averaged readings (g)
-//     float fgPerCount;     // initialized to FGPERCOUNT
+//     double fGpFast[3];     // fast (typically 200Hz) readings (g)
+//     double fGp[3];         // slow (typically 25Hz) averaged readings (g)
+//     double fgPerCount;     // initialized to FGPERCOUNT
 //     int16 iGpFast[3];     // fast (typically 200Hz) readings
 //     int16 iGp[3];         // slow (typically 25Hz) averaged readings (counts)
 // };
@@ -187,8 +187,8 @@ struct fquaternion {
 // // gyro sensor structure definition
 // struct GyroSensor {
 //     int32 iSumYpFast[3];                 // sum of fast measurements
-//     float fYp[3];                        // raw gyro sensor output (deg/s)
-//     float fDegPerSecPerCount;            // initialized to FDEGPERSECPERCOUNT
+//     double fYp[3];                        // raw gyro sensor output (deg/s)
+//     double fDegPerSecPerCount;            // initialized to FDEGPERSECPERCOUNT
 //     int16 iYpFast[OVERSAMPLE_RATIO][3];  // fast (typically 200Hz) readings
 //     int16 iYp[3];                        // averaged gyro sensor output (counts)
 // };

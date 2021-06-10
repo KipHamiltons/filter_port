@@ -56,9 +56,9 @@ namespace filter::kalman {
                               int16 iOverSampleRatio);
     void fRun_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN* pthisSV,
                              //  struct AccelSensor* pthisAccel,
-                             float accel_reading[3],
+                             double accel_reading[3],
                              //  struct GyroSensor* pthisGyro,
-                             float gyro_reading[3],
+                             double gyro_reading[3],
                              int16 ithisCoordSystem,
                              int16 iOverSampleRatio);
 }  // namespace filter::kalman

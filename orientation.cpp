@@ -55,15 +55,15 @@ namespace filter::orientation {
     using filter::matrix::f3x3matrixAeqScalar;
 
     // Aerospace NED accelerometer 3DOF tilt function computing rotation matrix fR
-    void f3DOFTiltNED(float fR[][3], float fGp[]) {
+    void f3DOFTiltNED(double fR[][3], double fGp[]) {
         // the NED self-consistency twist occurs at 90 deg pitch
 
         // local variables
-        int16 i;              // counter
-        float fmodGxyz;       // modulus of the x, y, z accelerometer readings
-        float fmodGyz;        // modulus of the y, z accelerometer readings
-        float frecipmodGxyz;  // reciprocal of modulus
-        float ftmp;           // scratch variable
+        int16 i;               // counter
+        double fmodGxyz;       // modulus of the x, y, z accelerometer readings
+        double fmodGyz;        // modulus of the y, z accelerometer readings
+        double frecipmodGxyz;  // reciprocal of modulus
+        double ftmp;           // scratch variable
 
         // compute the accelerometer squared magnitudes
         fmodGyz  = fGp[Y] * fGp[Y] + fGp[Z] * fGp[Z];
@@ -115,7 +115,7 @@ namespace filter::orientation {
     }
 
     // Android accelerometer 3DOF tilt function computing rotation matrix fR
-    void f3DOFTiltAndroid(float fR[][3], float fGp[]) {
+    void f3DOFTiltAndroid(double fR[][3], double fGp[]) {
         // the Android tilt matrix is mathematically identical to the NED tilt matrix
         // the Android self-consistency twist occurs at 90 deg roll
         f3DOFTiltNED(fR, fGp);
@@ -123,15 +123,15 @@ namespace filter::orientation {
     }
 
     // Windows 8 accelerometer 3DOF tilt function computing rotation matrix fR
-    void f3DOFTiltWin8(float fR[][3], float fGp[]) {
+    void f3DOFTiltWin8(double fR[][3], double fGp[]) {
         // the Win8 self-consistency twist occurs at 90 deg roll
 
         // local variables
-        float fmodGxyz;       // modulus of the x, y, z accelerometer readings
-        float fmodGxz;        // modulus of the x, z accelerometer readings
-        float frecipmodGxyz;  // reciprocal of modulus
-        float ftmp;           // scratch variable
-        int8 i;               // counter
+        double fmodGxyz;       // modulus of the x, y, z accelerometer readings
+        double fmodGxz;        // modulus of the x, z accelerometer readings
+        double frecipmodGxyz;  // reciprocal of modulus
+        double ftmp;           // scratch variable
+        int8 i;                // counter
 
         // compute the accelerometer squared magnitudes
         fmodGxz  = fGp[X] * fGp[X] + fGp[Z] * fGp[Z];
@@ -190,9 +190,9 @@ namespace filter::orientation {
     }
 
     // Aerospace NED magnetometer 3DOF flat eCompass function computing rotation matrix fR
-    void f3DOFMagnetometerMatrixNED(float fR[][3], float fBc[]) {
+    void f3DOFMagnetometerMatrixNED(double fR[][3], double fBc[]) {
         // local variables
-        float fmodBxy;  // modulus of the x, y magnetometer readings
+        double fmodBxy;  // modulus of the x, y magnetometer readings
 
         // compute the magnitude of the horizontal (x and y) magnetometer reading
         fmodBxy = std::sqrt(fBc[X] * fBc[X] + fBc[Y] * fBc[Y]);
@@ -216,9 +216,9 @@ namespace filter::orientation {
     }
 
     // Android magnetometer 3DOF flat eCompass function computing rotation matrix fR
-    void f3DOFMagnetometerMatrixAndroid(float fR[][3], float fBc[]) {
+    void f3DOFMagnetometerMatrixAndroid(double fR[][3], double fBc[]) {
         // local variables
-        float fmodBxy;  // modulus of the x, y magnetometer readings
+        double fmodBxy;  // modulus of the x, y magnetometer readings
 
         // compute the magnitude of the horizontal (x and y) magnetometer reading
         fmodBxy = std::sqrt(fBc[X] * fBc[X] + fBc[Y] * fBc[Y]);
@@ -242,7 +242,7 @@ namespace filter::orientation {
     }
 
     // Windows 8 magnetometer 3DOF flat eCompass function computing rotation matrix fR
-    void f3DOFMagnetometerMatrixWin8(float fR[][3], float fBc[]) {
+    void f3DOFMagnetometerMatrixWin8(double fR[][3], double fBc[]) {
         // call the Android function since it is identical to the Windows 8 matrix
         f3DOFMagnetometerMatrixAndroid(fR, fBc);
 
@@ -250,13 +250,13 @@ namespace filter::orientation {
     }
 
     // NED: 6DOF e-Compass function computing rotation matrix fR
-    void feCompassNED(float fR[][3], float* pfDelta, float fBc[], float fGp[]) {
+    void feCompassNED(double fR[][3], double* pfDelta, double fBc[], double fGp[]) {
         // local variables
-        float fmod[3];  // column moduli
-        float fmodBc;   // modulus of Bc
-        float fGdotBc;  // dot product of vectors G.Bc
-        float ftmp;     // scratch variable
-        int8 i, j;      // loop counters
+        double fmod[3];  // column moduli
+        double fmodBc;   // modulus of Bc
+        double fGdotBc;  // dot product of vectors G.Bc
+        double ftmp;     // scratch variable
+        int8 i, j;       // loop counters
 
         // set the inclination angle to zero in case it is not computed later
         *pfDelta = 0.0F;
@@ -311,13 +311,13 @@ namespace filter::orientation {
     }
 
     // Android: 6DOF e-Compass function computing rotation matrix fR
-    void feCompassAndroid(float fR[][3], float* pfDelta, float fBc[], float fGp[]) {
+    void feCompassAndroid(double fR[][3], double* pfDelta, double fBc[], double fGp[]) {
         // local variables
-        float fmod[3];  // column moduli
-        float fmodBc;   // modulus of Bc
-        float fGdotBc;  // dot product of vectors G.Bc
-        float ftmp;     // scratch variable
-        int8 i, j;      // loop counters
+        double fmod[3];  // column moduli
+        double fmodBc;   // modulus of Bc
+        double fGdotBc;  // dot product of vectors G.Bc
+        double ftmp;     // scratch variable
+        int8 i, j;       // loop counters
 
         // set the inclination angle to zero in case it is not computed later
         *pfDelta = 0.0F;
@@ -372,13 +372,13 @@ namespace filter::orientation {
     }
 
     // Win8: 6DOF e-Compass function computing rotation matrix fR
-    void feCompassWin8(float fR[][3], float* pfDelta, float fBc[], float fGp[]) {
+    void feCompassWin8(double fR[][3], double* pfDelta, double fBc[], double fGp[]) {
         // local variables
-        float fmod[3];  // column moduli
-        float fmodBc;   // modulus of Bc
-        float fGdotBc;  // dot product of vectors G.Bc
-        float ftmp;     // scratch variable
-        int8 i, j;      // loop counters
+        double fmod[3];  // column moduli
+        double fmodBc;   // modulus of Bc
+        double fGdotBc;  // dot product of vectors G.Bc
+        double ftmp;     // scratch variable
+        int8 i, j;       // loop counters
 
         // set the inclination angle to zero in case it is not computed later
         *pfDelta = 0.0F;
@@ -434,12 +434,12 @@ namespace filter::orientation {
     }
 
     // extract the NED angles in degrees from the NED rotation matrix
-    void fNEDAnglesDegFromRotationMatrix(float R[][3],
-                                         float* pfPhiDeg,
-                                         float* pfTheDeg,
-                                         float* pfPsiDeg,
-                                         float* pfRhoDeg,
-                                         float* pfChiDeg) {
+    void fNEDAnglesDegFromRotationMatrix(double R[][3],
+                                         double* pfPhiDeg,
+                                         double* pfTheDeg,
+                                         double* pfPsiDeg,
+                                         double* pfRhoDeg,
+                                         double* pfChiDeg) {
         // calculate the pitch angle -90.0 <= Theta <= 90.0 deg
         *pfTheDeg = fasin_deg(-R[X][Z]);
 
@@ -485,12 +485,12 @@ namespace filter::orientation {
     }
 
     // extract the Android angles in degrees from the Android rotation matrix
-    void fAndroidAnglesDegFromRotationMatrix(float R[][3],
-                                             float* pfPhiDeg,
-                                             float* pfTheDeg,
-                                             float* pfPsiDeg,
-                                             float* pfRhoDeg,
-                                             float* pfChiDeg) {
+    void fAndroidAnglesDegFromRotationMatrix(double R[][3],
+                                             double* pfPhiDeg,
+                                             double* pfTheDeg,
+                                             double* pfPsiDeg,
+                                             double* pfRhoDeg,
+                                             double* pfChiDeg) {
         // calculate the roll angle -90.0 <= Phi <= 90.0 deg
         *pfPhiDeg = fasin_deg(R[X][Z]);
 
@@ -537,12 +537,12 @@ namespace filter::orientation {
     }
 
     // extract the Windows 8 angles in degrees from the Windows 8 rotation matrix
-    void fWin8AnglesDegFromRotationMatrix(float R[][3],
-                                          float* pfPhiDeg,
-                                          float* pfTheDeg,
-                                          float* pfPsiDeg,
-                                          float* pfRhoDeg,
-                                          float* pfChiDeg) {
+    void fWin8AnglesDegFromRotationMatrix(double R[][3],
+                                          double* pfPhiDeg,
+                                          double* pfTheDeg,
+                                          double* pfPsiDeg,
+                                          double* pfRhoDeg,
+                                          double* pfChiDeg) {
         // calculate the roll angle -90.0 <= Phi <= 90.0 deg
         if (R[Z][Z] == 0.0F) {
             if (R[X][Z] >= 0.0F) {
@@ -618,14 +618,14 @@ namespace filter::orientation {
     }
 
     // computes normalized rotation quaternion from a rotation vector (deg)
-    void fQuaternionFromRotationVectorDeg(struct fquaternion* pq, const float rvecdeg[], float fscaling) {
-        float fetadeg;     // rotation angle (deg)
-        float fetarad;     // rotation angle (rad)
-        float fetarad2;    // eta (rad)^2
-        float fetarad4;    // eta (rad)^4
-        float sinhalfeta;  // sin(eta/2)
-        float fvecsq;      // q1^2+q2^2+q3^2
-        float ftmp;        // scratch variable
+    void fQuaternionFromRotationVectorDeg(struct fquaternion* pq, const double rvecdeg[], double fscaling) {
+        double fetadeg;     // rotation angle (deg)
+        double fetarad;     // rotation angle (rad)
+        double fetarad2;    // eta (rad)^2
+        double fetarad4;    // eta (rad)^4
+        double sinhalfeta;  // sin(eta/2)
+        double fvecsq;      // q1^2+q2^2+q3^2
+        double ftmp;        // scratch variable
 
         // compute the scaled rotation angle eta (deg) which can be both positve or negative
         fetadeg  = fscaling * std::sqrt(rvecdeg[X] * rvecdeg[X] + rvecdeg[Y] * rvecdeg[Y] + rvecdeg[Z] * rvecdeg[Z]);
@@ -648,7 +648,7 @@ namespace filter::orientation {
         }
         else {
             // use exact calculation
-            sinhalfeta = (float) sinf(0.5F * fetarad);
+            sinhalfeta = (double) sinf(0.5F * fetarad);
         }
 
         // compute the vector quaternion components q1, q2, q3
@@ -680,9 +680,9 @@ namespace filter::orientation {
     }
 
     // compute the orientation quaternion from a 3x3 rotation matrix
-    void fQuaternionFromRotationMatrix(float R[][3], struct fquaternion* pq) {
-        float fq0sq;     // q0^2
-        float recip4q0;  // 1/4q0
+    void fQuaternionFromRotationMatrix(double R[][3], struct fquaternion* pq) {
+        double fq0sq;     // q0^2
+        double recip4q0;  // 1/4q0
 
         // the quaternion is not explicitly normalized in this function on the assumption that it
         // is supplied with a normalized rotation matrix. if the rotation matrix is normalized then
@@ -721,12 +721,12 @@ namespace filter::orientation {
     }
 
     // compute the rotation matrix from an orientation quaternion
-    void fRotationMatrixFromQuaternion(float R[][3], const struct fquaternion* pq) {
-        float f2q;
-        float f2q0q0, f2q0q1, f2q0q2, f2q0q3;
-        float f2q1q1, f2q1q2, f2q1q3;
-        float f2q2q2, f2q2q3;
-        float f2q3q3;
+    void fRotationMatrixFromQuaternion(double R[][3], const struct fquaternion* pq) {
+        double f2q;
+        double f2q0q0, f2q0q1, f2q0q2, f2q0q3;
+        double f2q1q1, f2q1q2, f2q1q3;
+        double f2q2q2, f2q2q3;
+        double f2q3q3;
 
         // calculate products
         f2q    = 2.0F * pq->q0;
@@ -758,11 +758,11 @@ namespace filter::orientation {
     }
 
     // function calculate the rotation vector from a rotation matrix
-    void fRotationVectorDegFromRotationMatrix(float R[][3], float rvecdeg[]) {
-        float ftrace;    // trace of the rotation matrix
-        float fetadeg;   // rotation angle eta (deg)
-        float fmodulus;  // modulus of axis * angle vector = 2|sin(eta)|
-        float ftmp;      // scratch variable
+    void fRotationVectorDegFromRotationMatrix(double R[][3], double rvecdeg[]) {
+        double ftrace;    // trace of the rotation matrix
+        double fetadeg;   // rotation angle eta (deg)
+        double fmodulus;  // modulus of axis * angle vector = 2|sin(eta)|
+        double ftmp;      // scratch variable
 
         // calculate the trace of the rotation matrix = 1+2cos(eta) in range -1 to +3
         // and eta (deg) in range 0 to 180 deg inclusive
@@ -823,11 +823,11 @@ namespace filter::orientation {
     }
 
     // computes rotation vector (deg) from rotation quaternion
-    void fRotationVectorDegFromQuaternion(struct fquaternion* pq, float rvecdeg[]) {
-        float fetarad;     // rotation angle (rad)
-        float fetadeg;     // rotation angle (deg)
-        float sinhalfeta;  // sin(eta/2)
-        float ftmp;        // scratch variable
+    void fRotationVectorDegFromQuaternion(struct fquaternion* pq, double rvecdeg[]) {
+        double fetarad;     // rotation angle (rad)
+        double fetadeg;     // rotation angle (deg)
+        double sinhalfeta;  // sin(eta/2)
+        double ftmp;        // scratch variable
 
         // calculate the rotation angle in the range 0 <= eta < 360 deg
         if ((pq->q0 >= 1.0F) || (pq->q0 <= -1.0F)) {
@@ -848,7 +848,7 @@ namespace filter::orientation {
         }
 
         // calculate sin(eta/2) which will be in the range -1 to +1
-        sinhalfeta = (float) sinf(0.5F * fetarad);
+        sinhalfeta = (double) sinf(0.5F * fetarad);
 
         // calculate the rotation vector (deg)
         if (sinhalfeta == 0.0F) {
@@ -869,14 +869,14 @@ namespace filter::orientation {
     // function low pass filters an orientation quaternion and computes virtual gyro rotation rate
     void fLPFOrientationQuaternion(struct fquaternion* pq,
                                    struct fquaternion* pLPq,
-                                   float flpf,
-                                   float fdeltat,
-                                   float fOmega[],
+                                   double flpf,
+                                   double fdeltat,
+                                   double fOmega[],
                                    int32 loopcounter) {
         // local variables
         struct fquaternion fdeltaq;  // delta rotation quaternion
-        float rvecdeg[3];            // rotation vector (deg)
-        float ftmp;                  // scratch variable
+        double rvecdeg[3];           // rotation vector (deg)
+        double ftmp;                 // scratch variable
 
         // initialize delay line on first pass: LPq[n]=q[n]
         if (loopcounter == 0) {
@@ -933,7 +933,7 @@ namespace filter::orientation {
     }
 
     // function low pass filters a scalar
-    void fLPFScalar(float* pfS, float* pfLPS, float flpf, int32 loopcounter) {
+    void fLPFScalar(double* pfS, double* pfLPS, double flpf, int32 loopcounter) {
         // set S[LP,n]=S[n] on first pass
         if (loopcounter == 0) {
             *pfLPS = *pfS;
@@ -985,7 +985,7 @@ namespace filter::orientation {
 
     // function normalizes a rotation quaternion and ensures q0 is non-negative
     void fqAeqNormqA(struct fquaternion* pqA) {
-        float fNorm;  // quaternion Norm
+        double fNorm;  // quaternion Norm
 
         // calculate the quaternion Norm
         fNorm = std::sqrt(pqA->q0 * pqA->q0 + pqA->q1 * pqA->q1 + pqA->q2 * pqA->q2 + pqA->q3 * pqA->q3);

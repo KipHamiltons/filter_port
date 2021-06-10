@@ -32,49 +32,49 @@ namespace filter::tasks {
     struct SV_6DOF_GY_KALMAN {
         // start: elements common to all motion state vectors
         // Euler angles
-        float fPhiPl;  // roll (deg)
-        float fThePl;  // pitch (deg)
-        float fPsiPl;  // yaw (deg)
-        float fRhoPl;  // compass (deg)
-        float fChiPl;  // tilt from vertical (deg)
+        double fPhiPl;  // roll (deg)
+        double fThePl;  // pitch (deg)
+        double fPsiPl;  // yaw (deg)
+        double fRhoPl;  // compass (deg)
+        double fChiPl;  // tilt from vertical (deg)
         // orientation matrix, quaternion and rotation vector
-        float fRPl[3][3];         // a posteriori  rotation matrix
+        double fRPl[3][3];        // a posteriori  rotation matrix
         struct fquaternion fqPl;  // a posteriori orientation quaternion
-        float fRVecPl[3];         // rotation vector
+        double fRVecPl[3];        // rotation vector
         // angular velocity
-        float fOmega[3];  // angular velocity (deg/s)
+        double fOmega[3];  // angular velocity (deg/s)
         // systick timer for benchmarking
         int32 systick;  // systick timer
         // end: elements common to all motion state vectors
 
         // elements transmitted over bluetooth in kalman packet
-        float fbPl[3];      // gyro offset (deg/s)
-        float fThErrPl[3];  // orientation error (deg)
-        float fbErrPl[3];   // gyro offset error (deg/s)
+        double fbPl[3];      // gyro offset (deg/s)
+        double fThErrPl[3];  // orientation error (deg)
+        double fbErrPl[3];   // gyro offset error (deg/s)
         // end elements transmitted in kalman packet
 
-        float fzErrMi[3];             // angular error (deg) between a priori and eCompass
+        double fzErrMi[3];            // angular error (deg) between a priori and eCompass
                                       // orientations
-        float fRMi[3][3];             // a priori rotation matrix
+        double fRMi[3][3];            // a priori rotation matrix
         struct fquaternion fqMi;      // a priori orientation quaternion
         struct fquaternion fDeltaq;   // delta a priori or a posteriori quaternion
-        float faSePl[3];              // linear acceleration (g, sensor frame)
-        float faErrSePl[3];           // linear acceleration error (g, sensor frame)
-        float fgErrSeMi[3];           // difference (g, sensor frame) of gravity vector (accel)
+        double faSePl[3];             // linear acceleration (g, sensor frame)
+        double faErrSePl[3];          // linear acceleration error (g, sensor frame)
+        double fgErrSeMi[3];          // difference (g, sensor frame) of gravity vector (accel)
                                       // and gravity vector (gyro)
-        float fgSeGyMi[3];            // gravity vector (g, sensor frame) measurement from gyro
-        float faSeMi[3];              // linear acceleration (g, sensor frame)
-        float fQvAA;                  // accelerometer terms of Qv
-        float fPPlus9x9[9][9];        // covariance matrix P+
-        float fK9x3[9][3];            // kalman filter gain matrix K
-        float fQw9x9[9][9];           // covariance matrix Qw
-        float fC3x9[3][9];            // measurement matrix C
-        float fcasq;                  // FCA * FCA;
-        float fFastdeltat;            // sensor sampling interval (s) = 1 / SENSORFS
-        float fdeltat;                // kalman filter sampling interval (s) = OVERSAMPLE_RATIO /
+        double fgSeGyMi[3];           // gravity vector (g, sensor frame) measurement from gyro
+        double faSeMi[3];             // linear acceleration (g, sensor frame)
+        double fQvAA;                 // accelerometer terms of Qv
+        double fPPlus9x9[9][9];       // covariance matrix P+
+        double fK9x3[9][3];           // kalman filter gain matrix K
+        double fQw9x9[9][9];          // covariance matrix Qw
+        double fC3x9[3][9];           // measurement matrix C
+        double fcasq;                 // FCA * FCA;
+        double fFastdeltat;           // sensor sampling interval (s) = 1 / SENSORFS
+        double fdeltat;               // kalman filter sampling interval (s) = OVERSAMPLE_RATIO /
                                       // SENSORFS
-        float fdeltatsq;              // fdeltat * fdeltat;
-        float fQwbplusQvG;            // FQWB + FQVG;
+        double fdeltatsq;             // fdeltat * fdeltat;
+        double fQwbplusQvG;           // FQWB + FQVG;
         int16 iFirstOrientationLock;  // denotes that 6DOF orientation has locked to 3DOF
         int8 resetflag;               // flag to request re-initialization on next pass
     };

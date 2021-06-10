@@ -40,9 +40,9 @@
 
 namespace filter::matrix {
     // function sets the 3x3 matrix A to the identity matrix
-    void f3x3matrixAeqI(float A[][3]) {
-        float* pAij;  // pointer to A[i][j]
-        int8 i, j;    // loop counters
+    void f3x3matrixAeqI(double A[][3]) {
+        double* pAij;  // pointer to A[i][j]
+        int8 i, j;     // loop counters
 
         for (i = 0; i < 3; i++) {
             // set pAij to &A[i][j=0]
@@ -56,11 +56,11 @@ namespace filter::matrix {
     }
 
     // function sets the matrix A to the identity matrix
-    void fmatrixAeqI(float* A[], int16 rc) {
+    void fmatrixAeqI(double* A[], int16 rc) {
         // rc = rows and columns in A
 
-        float* pAij;  // pointer to A[i][j]
-        int8 i, j;    // loop counters
+        double* pAij;  // pointer to A[i][j]
+        int8 i, j;     // loop counters
 
         for (i = 0; i < rc; i++) {
             // set pAij to &A[i][j=0]
@@ -74,9 +74,9 @@ namespace filter::matrix {
     }
 
     // function sets every entry in the 3x3 matrix A to a constant scalar
-    void f3x3matrixAeqScalar(float A[][3], float Scalar) {
-        float* pAij;  // pointer to A[i][j]
-        int8 i, j;    // counters
+    void f3x3matrixAeqScalar(double A[][3], double Scalar) {
+        double* pAij;  // pointer to A[i][j]
+        int8 i, j;     // counters
 
         for (i = 0; i < 3; i++) {
             // set pAij to &A[i][j=0]
@@ -89,9 +89,9 @@ namespace filter::matrix {
     }
 
     // function multiplies all elements of 3x3 matrix A by the specified scalar
-    void f3x3matrixAeqAxScalar(float A[][3], float Scalar) {
-        float* pAij;  // pointer to A[i][j]
-        int8 i, j;    // loop counters
+    void f3x3matrixAeqAxScalar(double A[][3], double Scalar) {
+        double* pAij;  // pointer to A[i][j]
+        int8 i, j;     // loop counters
 
         for (i = 0; i < 3; i++) {
             // set pAij to &A[i][j=0]
@@ -105,9 +105,9 @@ namespace filter::matrix {
     }
 
     // function negates all elements of 3x3 matrix A
-    void f3x3matrixAeqMinusA(float A[][3]) {
-        float* pAij;  // pointer to A[i][j]
-        int8 i, j;    // loop counters
+    void f3x3matrixAeqMinusA(double A[][3]) {
+        double* pAij;  // pointer to A[i][j]
+        int8 i, j;     // loop counters
 
         for (i = 0; i < 3; i++) {
             // set pAij to &A[i][j=0]
@@ -123,11 +123,11 @@ namespace filter::matrix {
 
     // function directly calculates the symmetric inverse of a symmetric 3x3 matrix
     // only the on and above diagonal terms in B are used and need to be specified
-    void f3x3matrixAeqInvSymB(float A[][3], float B[][3]) {
-        float fB11B22mB12B12;  // B[1][1] * B[2][2] - B[1][2] * B[1][2]
-        float fB12B02mB01B22;  // B[1][2] * B[0][2] - B[0][1] * B[2][2]
-        float fB01B12mB11B02;  // B[0][1] * B[1][2] - B[1][1] * B[0][2]
-        float ftmp;            // determinant and then reciprocal
+    void f3x3matrixAeqInvSymB(double A[][3], double B[][3]) {
+        double fB11B22mB12B12;  // B[1][1] * B[2][2] - B[1][2] * B[1][2]
+        double fB12B02mB01B22;  // B[1][2] * B[0][2] - B[0][1] * B[2][2]
+        double fB01B12mB11B02;  // B[0][1] * B[1][2] - B[1][1] * B[0][2]
+        double ftmp;            // determinant and then reciprocal
 
         // calculate useful products
         fB11B22mB12B12 = B[1][1] * B[2][2] - B[1][2] * B[1][2];
@@ -155,7 +155,7 @@ namespace filter::matrix {
     }
 
     // function calculates the determinant of a 3x3 matrix
-    float f3x3matrixDetA(float A[][3]) {
+    double f3x3matrixDetA(double A[][3]) {
         return (A[X][X] * (A[Y][Y] * A[Z][Z] - A[Y][Z] * A[Z][Y]) + A[X][Y] * (A[Y][Z] * A[Z][X] - A[Y][X] * A[Z][Z])
                 + A[X][Z] * (A[Y][X] * A[Z][Y] - A[Y][Y] * A[Z][X]));
     }
@@ -166,16 +166,16 @@ namespace filter::matrix {
     // eigval[0..n-1] returns the eigenvalues of A[][].
     // eigvec[0..n-1][0..n-1] returns the normalized eigenvectors of A[][]
     // the eigenvectors are not sorted by value
-    void eigencompute(float A[][10], float eigval[], float eigvec[][10], int8 n) {
+    void eigencompute(double A[][10], double eigval[], double eigvec[][10], int8 n) {
         // maximum number of iterations to achieve convergence: in practice 6 is typical
 #define NITERATIONS 15
 
         // various trig functions of the jacobi rotation angle phi
-        float cot2phi, tanhalfphi, tanphi, sinphi, cosphi;
+        double cot2phi, tanhalfphi, tanphi, sinphi, cosphi;
         // scratch variable to prevent over-writing during rotations
-        float ftmp;
+        double ftmp;
         // residue from remaining non-zero above diagonal terms
-        float residue;
+        double residue;
         // matrix row and column indices
         int8 ir, ic;
         // general loop counter
@@ -297,11 +297,11 @@ namespace filter::matrix {
 
     // function uses Gauss-Jordan elimination to compute the inverse of matrix A in situ
     // on exit, A is replaced with its inverse
-    void fmatrixAeqInvA(float* A[], int8 iColInd[], int8 iRowInd[], int8 iPivot[], int8 isize) {
-        float largest;              // largest element used for pivoting
-        float scaling;              // scaling factor in pivoting
-        float recippiv;             // reciprocal of pivot element
-        float ftmp;                 // temporary variable used in swaps
+    void fmatrixAeqInvA(double* A[], int8 iColInd[], int8 iRowInd[], int8 iPivot[], int8 isize) {
+        double largest;             // largest element used for pivoting
+        double scaling;             // scaling factor in pivoting
+        double recippiv;            // reciprocal of pivot element
+        double ftmp;                // temporary variable used in swaps
         int8 i, j, k, l, m;         // index counters
         int8 iPivotRow, iPivotCol;  // row and column of pivot element
 
@@ -330,7 +330,7 @@ namespace filter::matrix {
                                 // and store this location as the current best candidate for pivoting
                                 iPivotRow = j;
                                 iPivotCol = k;
-                                largest   = (float) std::fabs(A[iPivotRow][iPivotCol]);
+                                largest   = (double) std::fabs(A[iPivotRow][iPivotCol]);
                             }
                         }
                         else if (iPivot[k] > 1) {
@@ -411,8 +411,8 @@ namespace filter::matrix {
     }
 
     // function re-orthonormalizes a 3x3 rotation matrix
-    void fmatrixAeqRenormRotA(float A[][3]) {
-        float ftmp;  // scratch variable
+    void fmatrixAeqRenormRotA(double A[][3]) {
+        double ftmp;  // scratch variable
 
         // normalize the X column of the low pass filtered orientation matrix
         ftmp = std::sqrt(A[X][X] * A[X][X] + A[Y][X] * A[Y][X] + A[Z][X] * A[Z][X]);

@@ -28,10 +28,10 @@
 
 namespace filter::approximations {
     // function prototypes
-    float fasin_deg(float x);
-    float facos_deg(float x);
-    float fatan_deg(float x);
-    float fatan2_deg(float y, float x);
-    float fatan_15deg(float x);
+    double fasin_deg(double x);
+    double facos_deg(double x);
+    double fatan_deg(double x);
+    double fatan2_deg(double y, double x);
+    double fatan_15deg(double x);
 }  // namespace filter::approximations
 #endif  // APPROXIMATIONS_HPP
