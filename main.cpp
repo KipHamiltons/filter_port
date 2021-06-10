@@ -1,16 +1,21 @@
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <array>
+#include <cmath>
 #include <fstream>
 #include <iostream>
+#include <numeric>
 #include <vector>
 
+#include "build.hpp"
 #include "kalman.hpp"
 #include "stdio.h"
 
 int main() {
     std::vector<std::array<float, 3>> gyro_readings{};
     std::vector<std::array<float, 3>> acc_readings{};
-    std::vector<std::array<float, 4>> quaternions{};
+    std::vector<Eigen::Quaternion<float>> quaternions{};
 
     char comma;
     std::ifstream ifs("../gyroscope.csv");
@@ -33,23 +38,65 @@ int main() {
     ifs.close();
     ifs.open("../quaternion.csv");
     while (ifs.good()) {
-        std::array<float, 4> quat{};
-        ifs >> quat[0] >> comma >> quat[1] >> comma >> quat[2] >> comma >> quat[3];
+        Eigen::Quaternion<float> quat{};
+        ifs >> quat.w() >> comma >> quat.x() >> comma >> quat.y() >> comma >> quat.z();
         if (ifs.good()) {
             quaternions.emplace_back(quat);
         }
     }
     ifs.close();
 
+
     std::cout << "Found " << gyro_readings.size() << " gyroscope readings" << std::endl;
     std::cout << "Found " << acc_readings.size() << " accelerometer readings" << std::endl;
     std::cout << "Found " << quaternions.size() << " ground-truth quaternions" << std::endl;
 
-    // struct filter::tasks::SV_6DOF_GY_KALMAN filter {};
-    // // TODO clarify coord system
-    // static constexpr int16 COORDINATE_SYSTEM = ANDROID;
-    // static constexpr int16 SAMPLE_RATE       = 200;
-    // static constexpr int16 DECIMATION_FACTOR = 1;
-    // filter::kalman::fInit_6DOF_GY_KALMAN(&filter, SAMPLE_RATE,
-    // DECIMATION_FACTOR);
+    struct filter::tasks::SV_6DOF_GY_KALMAN filter {};
+    // TODO clarify coord system
+    static constexpr int16 COORDINATE_SYSTEM = ANDROID;
+    static constexpr int16 SAMPLE_RATE       = 200;
+    static constexpr int16 DECIMATION_FACTOR = 1;
+
+    // Initialise the filter
+    filter::kalman::fInit_6DOF_GY_KALMAN(&filter, SAMPLE_RATE, DECIMATION_FACTOR);
+
+    // The output quaternions
+    std::vector<Eigen::Quaternion<float>> orientations{};
+
+    for (int t = 0; t < int(quaternions.size()); ++t) {
+        auto acc_reading  = acc_readings[t];
+        auto gyro_reading = gyro_readings[t];
+        // The data is expected to be in deg,
+        // but converting it doesn't change the result??
+        // gyro_reading[0]   = gyro_reading[0] * M_PI / 180.0f;
+        // gyro_reading[1]   = gyro_reading[1] * M_PI / 180.0f;
+        // gyro_reading[2]   = gyro_reading[2] * M_PI / 180.0f;
+
+        filter::kalman::fRun_6DOF_GY_KALMAN(&filter,
+                                            acc_reading.data(),
+                                            gyro_reading.data(),
+                                            COORDINATE_SYSTEM,
+                                            DECIMATION_FACTOR);
+        fquaternion q = filter.fqPl;
+        Eigen::Quaternion<float> orientation{};
+        orientation.w()   = q.q0;
+        orientation.vec() = Eigen::Vector3f(q.q1, q.q2, q.q3);
+        orientations.emplace_back(orientation);
+    }
+
+    std::vector<float> errors;
+    for (int t = 0; t < int(quaternions.size()); ++t) {
+        const auto p    = orientations[t];
+        const auto q    = quaternions[t];
+        const float dot = p.dot(q);
+
+        errors.emplace_back(std::acos(float(2) * dot * dot - 1.0f));
+        // errors.emplace_back(2 * std::acos(std::fabs(dot)));
+    }
+
+    std::cout << "Calculating error over " << orientations.size() << " orientation predictions" << std::endl;
+    std::cout << "Average Angular Error: " << std::accumulate(errors.begin(), errors.end(), 0.0f) / float(errors.size())
+              << std::endl;
+
+    return 0;
 }
