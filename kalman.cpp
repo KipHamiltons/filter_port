@@ -57,17 +57,15 @@ namespace filter::kalman {
 
 
     // function initalizes the 6DOF accel + gyro Kalman filter algorithm
-    void fInit_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN* pthisSV,
-                              int16 iSensorFS,
-                              int16 iOverSampleRatio) {
+    void fInit_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN* pthisSV, int iSensorFS, int iOverSampleRatio) {
         int8 i, j;  // loop counters
 
         // reset the flag denoting that a first 6DOpthisSVtion lock has been achieved
         pthisSV->iFirstOrientationLock = 0;
 
         // compute and store useful product terms to save doubleing point calculations later
-        pthisSV->fFastdeltat = 1.0F / (double) iSensorFS;
-        pthisSV->fdeltat     = (double) iOverSampleRatio * pthisSV->fFastdeltat;
+        pthisSV->fFastdeltat = 1.0F / double(iSensorFS);
+        pthisSV->fdeltat     = double(iOverSampleRatio * pthisSV->fFastdeltat);
         pthisSV->fdeltatsq   = pthisSV->fdeltat * pthisSV->fdeltat;
         pthisSV->fcasq       = FCA_6DOF_GY_KALMAN * FCA_6DOF_GY_KALMAN;
         pthisSV->fQwbplusQvG = FQWB_6DOF_GY_KALMAN + FQVG_6DOF_GY_KALMAN;
@@ -123,8 +121,8 @@ namespace filter::kalman {
                              double accel_reading[3],
                              //  struct GyroSensor* pthisGyro,
                              double gyro_reading[3],
-                             int16 ithisCoordSystem,
-                             int16 iOverSampleRatio) {
+                             int ithisCoordSystem,
+                             int iOverSampleRatio) {
         // local arrays and scalars
         double rvec[3];         // rotation vector
         double ftmpA9x3[9][3];  // scratch array

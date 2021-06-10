@@ -3,6 +3,25 @@ project(filter_port LANGUAGES C CXX)
 
 set(CMAKE_BUILD_TYPE "Debug")
 
+set(CMAKE_CXX_STANDARD 20)
+
+option(ENABLE_CLANG_TIDY "Enable building with clang-tidy checks." ON)
+if(ENABLE_CLANG_TIDY)
+  find_package(PythonInterp 3 REQUIRED)
+  set(CMAKE_CXX_CLANG_TIDY "${PYTHON_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/clang-tidy.py"
+                           "${PROJECT_BINARY_DIR}/clang-tidy-fixes" clang-tidy
+  )
+  set(CMAKE_C_CLANG_TIDY ${CMAKE_CXX_CLANG_TIDY})
+
+  # Create a target that will apply clang-tidy fixes to the codebase
+  add_custom_target(
+    apply-clang-tidy
+    COMMAND clang-apply-replacements --format --style=file --style-config="${PROJECT_SOURCE_DIR}"
+            --remove-change-desc-files "${PROJECT_BINARY_DIR}/clang-tidy-fixes"
+    COMMENT "Applying fixes from clang-tidy to the codebase."
+  )
+endif()
+
 find_package(Eigen3 REQUIRED)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES GNU)

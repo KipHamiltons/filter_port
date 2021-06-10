@@ -13,14 +13,14 @@
 #include "stdio.h"
 
 int main() {
-    std::vector<std::array<double, 3>> gyro_readings{};
-    std::vector<std::array<double, 3>> acc_readings{};
+    std::vector<Eigen::Vector3d> gyro_readings{};
+    std::vector<Eigen::Vector3d> acc_readings{};
     std::vector<Eigen::Quaternion<double>> quaternions{};
 
     char comma;
     std::ifstream ifs("../gyroscope.csv");
     while (ifs.good()) {
-        std::array<double, 3> gyro;
+        Eigen::Vector3d gyro;
         ifs >> gyro[0] >> comma >> gyro[1] >> comma >> gyro[2];
         if (ifs.good()) {
             gyro_readings.emplace_back(gyro);
@@ -29,7 +29,7 @@ int main() {
     ifs.close();
     ifs.open("../accelerometer.csv");
     while (ifs.good()) {
-        std::array<double, 3> acc;
+        Eigen::Vector3d acc;
         ifs >> acc[0] >> comma >> acc[1] >> comma >> acc[2];
         if (ifs.good()) {
             acc_readings.emplace_back(acc);
@@ -53,9 +53,9 @@ int main() {
 
     struct filter::tasks::SV_6DOF_GY_KALMAN filter {};
     // TODO clarify coord system - WIN8 has bad perf. NED/ANDROID good perf??
-    static constexpr int16 COORDINATE_SYSTEM = NED;
-    static constexpr int16 SAMPLE_RATE       = 200;
-    static constexpr int16 DECIMATION_FACTOR = 1;
+    static constexpr int COORDINATE_SYSTEM = NED;
+    static constexpr int SAMPLE_RATE       = 200;
+    static constexpr int DECIMATION_FACTOR = 1;
 
     // Initialise the filter
     filter::kalman::fInit_6DOF_GY_KALMAN(&filter, SAMPLE_RATE, DECIMATION_FACTOR);

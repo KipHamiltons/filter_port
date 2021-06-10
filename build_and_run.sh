@@ -6,7 +6,7 @@ mkdir build
 
 cd build
 
-cmake .. -GNinja
+cmake .. -GNinja -DENABLE_CLANG_TIDY=ON
 
 ninja
 
