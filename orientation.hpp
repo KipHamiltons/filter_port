@@ -33,12 +33,6 @@ namespace filter::orientation {
     void f3DOFTiltNED(double fR[][3], double fGp[]);
     void f3DOFTiltAndroid(double fR[][3], double fGp[]);
     void f3DOFTiltWin8(double fR[][3], double fGp[]);
-    void f3DOFMagnetometerMatrixNED(double fR[][3], double fBc[]);
-    void f3DOFMagnetometerMatrixAndroid(double fR[][3], double fBc[]);
-    void f3DOFMagnetometerMatrixWin8(double fR[][3], double fBc[]);
-    void feCompassNED(double fR[][3], double* pfDelta, double fBc[], double fGp[]);
-    void feCompassAndroid(double fR[][3], double* pfDelta, double fBc[], double fGp[]);
-    void feCompassWin8(double fR[][3], double* pfDelta, double fBc[], double fGp[]);
     void fNEDAnglesDegFromRotationMatrix(double R[][3],
                                          double* pfPhiDeg,
                                          double* pfTheDeg,
@@ -59,20 +53,12 @@ namespace filter::orientation {
                                           double* pfChiDeg);
     void fQuaternionFromRotationMatrix(double R[][3], struct fquaternion* pq);
     void fRotationMatrixFromQuaternion(double R[][3], struct fquaternion* pq);
-    void fLPFScalar(double* pfS, double* pfLPS, double flpf, int loopcounter);
-    void qAeqBxC(struct fquaternion* pqA, struct fquaternion* pqB, struct fquaternion* pqC);
-    void qAeqAxB(struct fquaternion* pqA, struct fquaternion* pqB);
-    struct fquaternion qconjgAxB(struct fquaternion* pqA, struct fquaternion* pqB);
-    void fqAeqNormqA(struct fquaternion* pqA);
-    void fqAeq1(struct fquaternion* pqA);
-    void fRotationVectorDegFromRotationMatrix(double R[][3], double rvecdeg[]);
+    // void qAeqBxC(struct fquaternion* pqA, struct fquaternion* pqB, struct fquaternion* pqC);
+    // void qAeqAxB(struct fquaternion* pqA, struct fquaternion* pqB);
+    // void fqAeqNormqA(struct fquaternion* pqA);
+    // void fqAeq1(struct fquaternion* pqA);
     void fQuaternionFromRotationVectorDeg(struct fquaternion* pq, double rvecdeg[], double fscaling);
     void fRotationVectorDegFromQuaternion(struct fquaternion* pq, double rvecdeg[]);
-    void fLPFOrientationQuaternion(struct fquaternion* pq,
-                                   struct fquaternion* pLPq,
-                                   double flpf,
-                                   double fdeltat,
-                                   double fOmega[],
-                                   int loopcounter);
+
 }  // namespace filter::orientation
 #endif  // #ifndef ORIENTATION_HPP

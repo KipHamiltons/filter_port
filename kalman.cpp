@@ -45,14 +45,14 @@ namespace filter::kalman {
     using filter::orientation::f3DOFTiltWin8;
     using filter::orientation::fAndroidAnglesDegFromRotationMatrix;
     using filter::orientation::fNEDAnglesDegFromRotationMatrix;
-    using filter::orientation::fqAeq1;
-    using filter::orientation::fqAeqNormqA;
+    // using filter::orientation::fqAeq1;
+    // using filter::orientation::fqAeqNormqA;
     using filter::orientation::fQuaternionFromRotationMatrix;
     using filter::orientation::fQuaternionFromRotationVectorDeg;
     using filter::orientation::fRotationMatrixFromQuaternion;
     using filter::orientation::fRotationVectorDegFromQuaternion;
     using filter::orientation::fWin8AnglesDegFromRotationMatrix;
-    using filter::orientation::qAeqBxC;
+    // using filter::orientation::qAeqBxC;
 
 
     // function initalizes the 6DOF accel + gyro Kalman filter algorithm
@@ -81,7 +81,8 @@ namespace filter::kalman {
         // zero a posteriori orientation, error vector xe+ (thetae+, be+, ae+) and b+
         // f3x3matrixAeqI(pthisSV->fRPl);
         pthisSV->fRPL = Eigen::Matrix<Scalar, 3, 3>::Identity();
-        fqAeq1(&(pthisSV->fqPl));
+        // fqAeq1(&(pthisSV->fqPl));
+        fqPl = Eigen::Quaternion<Scalar>::Identity();  // TODO make sure this is good (probably is)
         for (i = 0; i <= 2; i++) {
             pthisSV->fThErrPl[i] = pthisSV->fbErrPl[i] = pthisSV->faErrSePl[i] = pthisSV->fbPl[i] = 0.0F;
         }
@@ -449,11 +450,13 @@ namespace filter::kalman {
 
         // compute the a posteriori orientation quaternion fqPl = fqMi * Deltaq(-thetae+)
         // the resulting quaternion may have negative scalar component q0
-        qAeqBxC(&(pthisSV->fqPl), &(pthisSV->fqMi), &(pthisSV->fDeltaq));
+        // qAeqBxC(&(pthisSV->fqPl), &(pthisSV->fqMi), &(pthisSV->fDeltaq));
+        pthisSV->fqPl = pthisSV->fqMi * pthisSV->fDeltaq;  // TODO try this swapped
 
         // normalize the a posteriori orientation quaternion to stop error propagation
         // the renormalization function ensures that the scalar component q0 is non-negative
-        fqAeqNormqA(&(pthisSV->fqPl));
+        // fqAeqNormqA(&(pthisSV->fqPl));
+        fqPl.normalize();  // TODO make sure this is good.
 
         // compute the a posteriori rotation matrix from the a posteriori quaternion
         fRotationMatrixFromQuaternion(pthisSV->fRPl, &(pthisSV->fqPl));
