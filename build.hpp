@@ -31,143 +31,46 @@
 #ifndef BUILD_HPP
 #define BUILD_HPP
 
-// PCB HAL options
-#define BOARD_WIN8_REV05            0  // with sensor shield
-#define BOARD_FRDM_KL25Z            1  // with sensor shield
-#define BOARD_FRDM_K20D50M          2  // with sensor shield
-#define BOARD_FXLC95000CL           3
-#define BOARD_FRDM_KL26Z            4  // with sensor shield
-#define BOARD_FRDM_K64F             5  // with sensor shield
-#define BOARD_FRDM_KL16Z            6  // with sensor shield
-#define BOARD_FRDM_KL46Z            7  // with sensor shield
-#define BOARD_FRDM_KL46Z_STANDALONE 8  // without sensor shield
-
-// enter new PCBs here with incrementing values
-// C Compiler Preprocessor define in the CodeWarrior project will choose which board to use
-#ifdef REV05
-    #define THIS_BOARD_ID BOARD_WIN8_REV05
-#endif
-#ifdef KL25Z
-    #define THIS_BOARD_ID BOARD_FRDM_KL25Z
-#endif
-#ifdef K20D50M
-    #define THIS_BOARD_ID BOARD_FRDM_K20D50M
-#endif
-#ifdef FXLC95000CL
-    #define THIS_BOARD_ID BOARD_FRDM_FXLC95000CL
-#endif
-#ifdef KL26Z
-    #define THIS_BOARD_ID BOARD_FRDM_KL26Z
-#endif
-#ifdef K64F
-    #define THIS_BOARD_ID BOARD_FRDM_K64F
-#endif
-#ifdef KL16Z
-    #define THIS_BOARD_ID BOARD_FRDM_KL16Z
-#endif
-#ifdef KL46Z
-    #define THIS_BOARD_ID BOARD_FRDM_KL46Z
-#endif
-#ifdef KL46Z_STANDALONE
-    #define THIS_BOARD_ID BOARD_FRDM_KL46Z_STANDALONE
-#endif
-
 // coordinate system for the build
 #define NED             0        // identifier for NED angle output
 #define ANDROID         1        // identifier for Android angle output
 #define WIN8            2        // identifier for Windows 8 angle output
 #define THISCOORDSYSTEM ANDROID  // the coordinate system to be used
 
-// sensors to be enabled: compile errors will warn if the sensors are not compatible with the algorithms.
-// avoid enabling FXOS8700 plus MMA8652 and MAG3110 which will result in sensor read from all sensors
-// with the data read first from FXOS8700 and then over-written by data from MMA8652 and MAG3110.
-// it will still work but it's a waste of clock cycles.
-#define USE_MPL3115
-#define USE_FXOS8700
-#define USE_FXAS21000
-//#define USE_FXAS21002
-//#define USE_MMA8652
-//#define USE_MAG3110
-
-// enforce a fatal compilation error if the K20D50M board is used with MMA8652
-#if (THIS_BOARD_ID == BOARD_FRDM_K20D50M) && defined USE_MMA8652
-    #error This build creates an I2C conflict between MMA8451 on K20D50M board and MMA8652 on sensor board
-#endif
-
-// set this value to set parallel (1) or sequential (0) operation of fusion algorithms
-// a) if defined to be 1 (true) (default for demos) then all algorithms execute
-// in parallel but only globals.QuaternionPacketType is transmitted
-// b) if defined to be 0 (false) then only the one algorithm required to support
-// globals.QuaternionPacketType is executed
-#define PARALLELNOTSEQUENTIAL 1  // default is 1
-
-// normally all enabled: degrees of freedom algorithms to be executed
-#define COMPUTE_1DOF_P_BASIC     // 1DOF pressure (altitude) and temperature: (1x pressure)
-#define COMPUTE_3DOF_G_BASIC     // 3DOF accel tilt: (1x accel)
-#define COMPUTE_3DOF_B_BASIC     // 3DOF mag eCompass (vehicle): (1x mag)
-#define COMPUTE_3DOF_Y_BASIC     // 3DOF gyro integration: (1x gyro)
-#define COMPUTE_6DOF_GB_BASIC    // 6DOF accel and mag eCompass: (1x accel + 1x mag)
-#define COMPUTE_6DOF_GY_KALMAN   // 6DOF accel and gyro (Kalman): (1x accel + 1x gyro)
-#define COMPUTE_9DOF_GBY_KALMAN  // 9DOF accel, mag and gyro (Kalman): (1x accel + 1x mag + 1x gyro)
-
-// int16 build number sent in Bluetooth debug packet
-#define THISBUILD 422
+#define COMPUTE_6DOF_GY_KALMAN  // 6DOF accel and gyro (Kalman): (1x accel + 1x gyro)
 
 // sampling rate and kalman filter timing
 #define FTM_INCLK_HZ     1000000  // int32: 1MHz FTM timer frequency set in PE: do not change
 #define SENSORFS         200      // int32: 200Hz: frequency (Hz) of sensor sampling process
-#define OVERSAMPLE_RATIO 8        // int32: 8x: 3DOF, 6DOF, 9DOF run at SENSORFS / OVERSAMPLE_RATIO Hz
-
-// power saving deep sleep
-//#define DEEPSLEEP				// define to enable deep sleep power saving
-
-// UART (Bluetooth) serial port control
-//#define UART_OFF				// define to measure MCU+algorithm current only
-
-// vector components
-#define X 0
-#define Y 1
-#define Z 2
-
-// booleans
-#define true 1
-#define false 0
+#define OVERSAMPLE_RATIO 1        // int32: 8x: 3DOF, 6DOF, 9DOF run at SENSORFS / OVERSAMPLE_RATIO Hz
 
 // geomagnetic model parameters
 #define DEFAULTB 50.0F  // default geomagnetic field (uT)
 
 // useful multiplicative conversion constants
-#define PI           3.141592654F       // Pi
-#define FDEGTORAD    0.01745329251994F  // degrees to radians conversion = pi / 180
-#define FRADTODEG    57.2957795130823F  // radians to degrees conversion = 180 / pi
-#define FRECIP180    0.0055555555555F   // multiplicative factor 1/180
-#define ONETHIRD     0.33333333F        // one third
-#define ONESIXTH     0.166666667F       // one sixth
-#define ONETWELFTH   0.0833333333F      // one twelfth
-#define ONEOVER48    0.02083333333F     // 1 / 48
-#define ONEOVER120   0.0083333333F      // 1 / 120
-#define ONEOVER3840  0.0002604166667F   // 1 / 3840
-#define ONEOVERROOT2 0.707106781F       // 1/sqrt(2)
-#define ROOT3OVER2   0.866025403784F    // sqrt(3)/2
+static constexpr double PI 3.141592654;               // Pi
+static constexpr double FDEGTORAD 0.01745329251994;   // degrees to radians conversion = pi / 180
+static constexpr double FRADTODEG 57.2957795130823;   // radians to degrees conversion = 180 / pi
+static constexpr double FRECIP180 0.0055555555555;    // multiplicative factor 1/180
+static constexpr double ONETHIRD 0.33333333;          // one third
+static constexpr double ONESIXTH 0.166666667;         // one sixth
+static constexpr double ONETWELFTH 0.0833333333;      // one twelfth
+static constexpr double ONEOVER48 0.02083333333;      // 1 / 48
+static constexpr double ONEOVER120 0.0083333333;      // 1 / 120
+static constexpr double ONEOVER3840 0.0002604166667;  // 1 / 3840
+static constexpr double ONEOVERROOT2 0.707106781;     // 1/sqrt(2)
+static constexpr double ROOT3OVER2 0.866025403784;    // sqrt(3)/2
 
-// type definitions
-// these re-define (but with no changes) those in MQX-Lite PE-Types.h for Kinetis
-using int8   = signed char;
-using uint8  = unsigned char;
-using int16  = short;
-using uint16 = unsigned short;
-using int32  = long;
-using uint32 = unsigned long;
 // the quaternion type to be transmitted
 using quaternion_type = enum quaternion { Q3, Q3M, Q3G, Q6MA, Q6AG, Q9 };
 
 // quaternion structure definition
-struct fquaternion {
-    double q0;  // scalar component
-    double q1;  // x vector component
-    double q2;  // y vector component
-    double q3;  // z vector component
-};
+// struct fquaternion {
+//     double q0;  // scalar component
+//     double q1;  // x vector component
+//     double q2;  // y vector component
+//     double q3;  // z vector component
+// };
 
 // We only care about fGpFast[3], so we'll just use that instead of this struct
 
