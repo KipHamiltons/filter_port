@@ -5,7 +5,7 @@ set(CMAKE_BUILD_TYPE "Debug")
 
 set(CMAKE_CXX_STANDARD 20)
 
-option(ENABLE_CLANG_TIDY "Enable building with clang-tidy checks." ON)
+option(ENABLE_CLANG_TIDY "Enable building with clang-tidy checks." OFF)
 if(ENABLE_CLANG_TIDY)
   find_package(PythonInterp 3 REQUIRED)
   set(CMAKE_CXX_CLANG_TIDY "${PYTHON_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/clang-tidy.py"
