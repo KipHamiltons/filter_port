@@ -26,18 +26,22 @@
 #ifndef MATRIX_HPP
 #define MATRIX_HPP
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+
 #include "build.hpp"
+
 namespace filter::matrix {
     // function prototypes
-    void f3x3matrixAeqI(double A[][3]);
-    void fmatrixAeqI(double* A[], int rc);
-    void f3x3matrixAeqScalar(double A[][3], double Scalar);
-    void f3x3matrixAeqInvSymB(double A[][3], double B[][3]);
-    void f3x3matrixAeqAxScalar(double A[][3], double Scalar);
-    void f3x3matrixAeqMinusA(double A[][3]);
-    double f3x3matrixDetA(double A[][3]);
-    void eigencompute(double A[][10], double eigval[], double eigvec[][10], int n);
-    void fmatrixAeqInvA(double* A[], int iColInd[], int iRowInd[], int iPivot[], int isize);
-    void fmatrixAeqRenormRotA(double A[][3]);
+    // void f3x3matrixAeqI(double A[][3]);
+    // void fmatrixAeqI(double* A[], int rc);
+    // void f3x3matrixAeqScalar(double A[][3], double Scalar);
+    // void f3x3matrixAeqInvSymB(double A[][3], double B[][3]);
+    // void f3x3matrixAeqAxScalar(double A[][3], double Scalar);
+    // void f3x3matrixAeqMinusA(double A[][3]);
+    // double f3x3matrixDetA(double A[][3]);
+    // void eigencompute(double A[][10], double eigval[], double eigvec[][10], int n);
+    // void fmatrixAeqInvA(double* A[], int iColInd[], int iRowInd[], int iPivot[], int isize);
+    // void fmatrixAeqRenormRotA(double A[][3]);
 }  // namespace filter::matrix
 #endif  // #ifndef MATRIX_HPP

@@ -47,8 +47,8 @@
 
 namespace filter::orientation {
 
-    using filter::matrix::f3x3matrixAeqI;
-    using filter::matrix::f3x3matrixAeqScalar;
+    // using filter::matrix::f3x3matrixAeqI;
+    // using filter::matrix::f3x3matrixAeqScalar;
     using filter::utilities::acos_deg;
     using filter::utilities::asin_deg;
     using filter::utilities::atan2_deg;
@@ -71,13 +71,15 @@ namespace filter::orientation {
 
         // check for freefall special case where no solution is possible
         if (fmodGxyz == 0.0F) {
-            f3x3matrixAeqI(fR);
+            // f3x3matrixAeqI(fR);
+            fR = Eigen::Matrix<Scalar, 3, 3>::Identity();
             return;
         }
 
         // check for vertical up or down gimbal lock case
         if (fmodGyz == 0.0F) {
-            f3x3matrixAeqScalar(fR, 0.0F);
+            // f3x3matrixAeqScalar(fR, 0.0F);
+            fR       = Eigen::Matrix<Scalar, 3, 3>::Zero();
             fR[1][1] = 1.0F;
             if (fGp[0] >= 0.0F) {
                 fR[0][2] = 1.0F;
@@ -136,13 +138,15 @@ namespace filter::orientation {
 
         // check for freefall special case where no solution is possible
         if (fmodGxyz == 0.0F) {
-            f3x3matrixAeqI(fR);
+            // f3x3matrixAeqI(fR);
+            fr = Eigen::Matrix<Scalar, 3, 3>::Identity();
             return;
         }
 
         // check for vertical up or down gimbal lock case
         if (fmodGxz == 0.0F) {
-            f3x3matrixAeqScalar(fR, 0.0F);
+            // f3x3matrixAeqScalar(fR, 0.0F);
+            fR       = Eigen::Matrix<Scalar, 3, 3>::Zero();
             fR[0][0] = 1.0F;
             if (fGp[1] >= 0.0F) {
                 fR[1][2] = -1.0F;
@@ -194,7 +198,8 @@ namespace filter::orientation {
 
         // check for zero field special case where no solution is possible
         if (fmodBxy == 0.0F) {
-            f3x3matrixAeqI(fR);
+            // f3x3matrixAeqI(fR);
+            fR = Eigen::Matrix<Scalar, 3, 3>::Identity();
             return;
         }
 
@@ -218,7 +223,8 @@ namespace filter::orientation {
 
         // check for zero field special case where no solution is possible
         if (fmodBxy == 0.0F) {
-            f3x3matrixAeqI(fR);
+            // f3x3matrixAeqI(fR);
+            fR = Eigen::Matrix<Scalar, 3, 3>::Identity();
             return;
         }
 
@@ -286,7 +292,8 @@ namespace filter::orientation {
         }
         else {
             // no solution is possible to set rotation to identity matrix
-            f3x3matrixAeqI(fR);
+            // f3x3matrixAeqI(fR);
+            fR = Eigen::Matrix<Scalar, 3, 3>::Identity();
             return;
         }
 
@@ -346,7 +353,8 @@ namespace filter::orientation {
         }
         else {
             // no solution is possible to set rotation to identity matrix
-            f3x3matrixAeqI(fR);
+            // f3x3matrixAeqI(fR);
+            fR = Eigen::Matrix<Scalar, 3, 3>::Identity();
             return;
         }
 
@@ -407,7 +415,8 @@ namespace filter::orientation {
         }
         else {
             // no solution is possible to set rotation to identity matrix
-            f3x3matrixAeqI(fR);
+            // f3x3matrixAeqI(fR);
+            fR = Eigen::Matrix<Scalar, 3, 3>::Identity();
             return;
         }
 

@@ -38,8 +38,8 @@
 #include "tasks.hpp"
 
 namespace filter::kalman {
-    using filter::matrix::f3x3matrixAeqI;
-    using filter::matrix::fmatrixAeqInvA;
+    // using filter::matrix::f3x3matrixAeqI;
+    // using filter::matrix::fmatrixAeqInvA;
     using filter::orientation::f3DOFTiltAndroid;
     using filter::orientation::f3DOFTiltNED;
     using filter::orientation::f3DOFTiltWin8;
@@ -79,7 +79,8 @@ namespace filter::kalman {
         pthisSV->fC3x9[0][6] = pthisSV->fC3x9[1][7] = pthisSV->fC3x9[2][8] = 1.0F;
 
         // zero a posteriori orientation, error vector xe+ (thetae+, be+, ae+) and b+
-        f3x3matrixAeqI(pthisSV->fRPl);
+        // f3x3matrixAeqI(pthisSV->fRPl);
+        pthisSV->fRPL = Eigen::Matrix<Scalar, 3, 3>::Identity();
         fqAeq1(&(pthisSV->fqPl));
         for (i = 0; i <= 2; i++) {
             pthisSV->fThErrPl[i] = pthisSV->fbErrPl[i] = pthisSV->faErrSePl[i] = pthisSV->fbPl[i] = 0.0F;
@@ -381,7 +382,8 @@ namespace filter::kalman {
         for (i = 0; i < 3; i++) {
             pfRows[i] = pthisSV->fPPlus9x9[i];
         }
-        fmatrixAeqInvA(pfRows, iColInd, iRowInd, iPivot, 3);
+        // fmatrixAeqInvA(pfRows, iColInd, iRowInd, iPivot, 3);
+        pfRows = pfRows.inverse();
 
         // set K = P- * C^T * inv(C * P- * C^T + Qv) = Qw * C^T * inv(C * Qw * C^T + Qv)
         // = ftmpA9x3 * P+ (3x3 sub-matrix)
