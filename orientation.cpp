@@ -32,9 +32,9 @@
 
 #include <cmath>
 
-#include "approximations.hpp"
 #include "build.hpp"
 #include "matrix.hpp"
+#include "utilities.hpp"
 // #include "stdio.h"
 // #include "stdlib.h"
 // #include "string.h"
@@ -47,12 +47,12 @@
 
 namespace filter::orientation {
 
-    using filter::approximations::facos_deg;
-    using filter::approximations::fasin_deg;
-    using filter::approximations::fatan2_deg;
-    using filter::approximations::fatan_deg;
     using filter::matrix::f3x3matrixAeqI;
     using filter::matrix::f3x3matrixAeqScalar;
+    using filter::utilities::acos_deg;
+    using filter::utilities::asin_deg;
+    using filter::utilities::atan2_deg;
+    using filter::utilities::atan_deg;
 
     // Aerospace NED accelerometer 3DOF tilt function computing rotation matrix fR
     void f3DOFTiltNED(double fR[][3], double fGp[]) {
@@ -294,7 +294,7 @@ namespace filter::orientation {
         fmodBc  = std::sqrt(fBc[0] * fBc[0] + fBc[1] * fBc[1] + fBc[2] * fBc[2]);
         fGdotBc = fGp[0] * fBc[0] + fGp[1] * fBc[1] + fGp[2] * fBc[2];
         if (!((fmod[2] == 0.0F) || (fmodBc == 0.0F))) {
-            *pfDelta = fasin_deg(fGdotBc / (fmod[2] * fmodBc));
+            *pfDelta = asin_deg(fGdotBc / (fmod[2] * fmodBc));
         }
     }
 
@@ -354,7 +354,7 @@ namespace filter::orientation {
         fmodBc  = std::sqrt(fBc[0] * fBc[0] + fBc[1] * fBc[1] + fBc[2] * fBc[2]);
         fGdotBc = fGp[0] * fBc[0] + fGp[1] * fBc[1] + fGp[2] * fBc[2];
         if (!((fmod[2] == 0.0F) || (fmodBc == 0.0F))) {
-            *pfDelta = fasin_deg(-fGdotBc / (fmod[2] * fmodBc));
+            *pfDelta = asin_deg(-fGdotBc / (fmod[2] * fmodBc));
         }
     }
 
@@ -415,7 +415,7 @@ namespace filter::orientation {
         fmodBc  = std::sqrt(fBc[0] * fBc[0] + fBc[1] * fBc[1] + fBc[2] * fBc[2]);
         fGdotBc = fGp[0] * fBc[0] + fGp[1] * fBc[1] + fGp[2] * fBc[2];
         if (!((fmod[2] == 0.0F) || (fmodBc == 0.0F))) {
-            *pfDelta = fasin_deg(fGdotBc / (fmod[2] * fmodBc));
+            *pfDelta = asin_deg(fGdotBc / (fmod[2] * fmodBc));
         }
     }
 
@@ -427,10 +427,10 @@ namespace filter::orientation {
                                          double* pfRhoDeg,
                                          double* pfChiDeg) {
         // calculate the pitch angle -90.0 <= Theta <= 90.0 deg
-        *pfTheDeg = fasin_deg(-R[0][2]);
+        *pfTheDeg = asin_deg(-R[0][2]);
 
         // calculate the roll angle range -180.0 <= Phi < 180.0 deg
-        *pfPhiDeg = fatan2_deg(R[1][2], R[2][2]);
+        *pfPhiDeg = atan2_deg(R[1][2], R[2][2]);
 
         // map +180 roll onto the functionally equivalent -180 deg roll
         if (*pfPhiDeg == 180.0F) {
@@ -440,15 +440,15 @@ namespace filter::orientation {
         // calculate the yaw (compass) angle 0.0 <= Psi < 360.0 deg
         if (*pfTheDeg == 90.0F) {
             // vertical upwards gimbal lock case
-            *pfPsiDeg = fatan2_deg(R[2][1], R[1][1]) + *pfPhiDeg;
+            *pfPsiDeg = atan2_deg(R[2][1], R[1][1]) + *pfPhiDeg;
         }
         else if (*pfTheDeg == -90.0F) {
             // vertical downwards gimbal lock case
-            *pfPsiDeg = fatan2_deg(-R[2][1], R[1][1]) - *pfPhiDeg;
+            *pfPsiDeg = atan2_deg(-R[2][1], R[1][1]) - *pfPhiDeg;
         }
         else {
             // general case
-            *pfPsiDeg = fatan2_deg(R[0][1], R[0][0]);
+            *pfPsiDeg = atan2_deg(R[0][1], R[0][0]);
         }
 
         // map yaw angle Psi onto range 0.0 <= Psi < 360.0 deg
@@ -465,7 +465,7 @@ namespace filter::orientation {
         *pfRhoDeg = *pfPsiDeg;
 
         // calculate the tilt angle from vertical Chi (0 <= Chi <= 180 deg)
-        *pfChiDeg = facos_deg(R[2][2]);
+        *pfChiDeg = acos_deg(R[2][2]);
     }
 
     // extract the Android angles in degrees from the Android rotation matrix
@@ -476,10 +476,10 @@ namespace filter::orientation {
                                              double* pfRhoDeg,
                                              double* pfChiDeg) {
         // calculate the roll angle -90.0 <= Phi <= 90.0 deg
-        *pfPhiDeg = fasin_deg(R[0][2]);
+        *pfPhiDeg = asin_deg(R[0][2]);
 
         // calculate the pitch angle -180.0 <= The < 180.0 deg
-        *pfTheDeg = fatan2_deg(-R[1][2], R[2][2]);
+        *pfTheDeg = atan2_deg(-R[1][2], R[2][2]);
 
         // map +180 pitch onto the functionally equivalent -180 deg pitch
         if (*pfTheDeg == 180.0F) {
@@ -489,15 +489,15 @@ namespace filter::orientation {
         // calculate the yaw (compass) angle 0.0 <= Psi < 360.0 deg
         if (*pfPhiDeg == 90.0F) {
             // vertical downwards gimbal lock case
-            *pfPsiDeg = fatan2_deg(R[1][0], R[1][1]) - *pfTheDeg;
+            *pfPsiDeg = atan2_deg(R[1][0], R[1][1]) - *pfTheDeg;
         }
         else if (*pfPhiDeg == -90.0F) {
             // vertical upwards gimbal lock case
-            *pfPsiDeg = fatan2_deg(R[1][0], R[1][1]) + *pfTheDeg;
+            *pfPsiDeg = atan2_deg(R[1][0], R[1][1]) + *pfTheDeg;
         }
         else {
             // // general case
-            *pfPsiDeg = fatan2_deg(-R[0][1], R[0][0]);
+            *pfPsiDeg = atan2_deg(-R[0][1], R[0][0]);
         }
 
         // map yaw angle Psi onto range 0.0 <= Psi < 360.0 deg
@@ -515,7 +515,7 @@ namespace filter::orientation {
         *pfRhoDeg = *pfPsiDeg;
 
         // calculate the tilt angle from vertical Chi (0 <= Chi <= 180 deg)
-        *pfChiDeg = facos_deg(R[2][2]);
+        *pfChiDeg = acos_deg(R[2][2]);
     }
 
     // extract the Windows 8 angles in degrees from the Windows 8 rotation matrix
@@ -538,11 +538,11 @@ namespace filter::orientation {
         }
         else {
             // general case
-            *pfPhiDeg = fatan_deg(-R[0][2] / R[2][2]);
+            *pfPhiDeg = atan_deg(-R[0][2] / R[2][2]);
         }
 
         // first calculate the pitch angle The in the range -90.0 <= The <= 90.0 deg
-        *pfTheDeg = fasin_deg(R[1][2]);
+        *pfTheDeg = asin_deg(R[1][2]);
 
         // use R[2][2]=cos(Phi)*cos(The) to correct the quadrant of The remembering
         // cos(Phi) is non-negative so that cos(The) has the same sign as R[2][2].
@@ -559,15 +559,15 @@ namespace filter::orientation {
         // calculate the yaw angle Psi
         if (*pfTheDeg == 90.0F) {
             // vertical upwards gimbal lock case: -270 <= Psi < 90 deg
-            *pfPsiDeg = fatan2_deg(R[0][1], R[0][0]) - *pfPhiDeg;
+            *pfPsiDeg = atan2_deg(R[0][1], R[0][0]) - *pfPhiDeg;
         }
         else if (*pfTheDeg == -90.0F) {
             // vertical downwards gimbal lock case: -270 <= Psi < 90 deg
-            *pfPsiDeg = fatan2_deg(R[0][1], R[0][0]) + *pfPhiDeg;
+            *pfPsiDeg = atan2_deg(R[0][1], R[0][0]) + *pfPhiDeg;
         }
         else {
             // general case: -180 <= Psi < 180 deg
-            *pfPsiDeg = fatan2_deg(-R[1][0], R[1][1]);
+            *pfPsiDeg = atan2_deg(-R[1][0], R[1][1]);
 
             // correct the quadrant for Psi using the value of The (deg) to give -180 <= Psi < 380 deg
             if (std::fabs(*pfTheDeg) >= 90.0F) {
@@ -594,7 +594,7 @@ namespace filter::orientation {
         }
 
         // calculate the tilt angle from vertical Chi (0 <= Chi <= 180 deg)
-        *pfChiDeg = facos_deg(R[2][2]);
+        *pfChiDeg = acos_deg(R[2][2]);
     }
 
     // computes normalized rotation quaternion from a rotation vector (deg)

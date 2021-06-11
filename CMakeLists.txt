@@ -31,7 +31,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
   endif()
 endif()
 
-set(src main.cpp kalman.cpp matrix.cpp orientation.cpp approximations.cpp tasks.hpp)
+set(src main.cpp kalman.cpp matrix.cpp orientation.cpp utilities.hpp tasks.hpp)
 
 add_executable(filter_test ${src})
 
