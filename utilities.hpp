@@ -27,9 +27,4 @@ namespace filter::utilities {
         return std::atan2(deg_to_rad(x), deg_to_rad(y));
     }
 
-    template <typename Scalar>
-    constexpr inline Scalar atan_15deg(const Scalar& angle) {
-        return std::atan(deg_to_rad(angle));
-    }
-
 }  // namespace filter::utilities
