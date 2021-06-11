@@ -40,9 +40,9 @@
 #define COMPUTE_6DOF_GY_KALMAN  // 6DOF accel and gyro (Kalman): (1x accel + 1x gyro)
 
 // sampling rate and kalman filter timing
-#define FTM_INCLK_HZ     1000000  // int32: 1MHz FTM timer frequency set in PE: do not change
-#define SENSORFS         200      // int32: 200Hz: frequency (Hz) of sensor sampling process
-#define OVERSAMPLE_RATIO 1        // int32: 8x: 3DOF, 6DOF, 9DOF run at SENSORFS / OVERSAMPLE_RATIO Hz
+#define FTM_INCLK_HZ     1000000  // int: 1MHz FTM timer frequency set in PE: do not change
+#define SENSORFS         200      // int: 200Hz: frequency (Hz) of sensor sampling process
+#define OVERSAMPLE_RATIO 1        // int: 8x: 3DOF, 6DOF, 9DOF run at SENSORFS / OVERSAMPLE_RATIO Hz
 
 // geomagnetic model parameters
 #define DEFAULTB 50.0F  // default geomagnetic field (uT)
@@ -65,23 +65,23 @@ static constexpr double ROOT3OVER2   = 0.866025403784;    // sqrt(3)/2
 using quaternion_type = enum quaternion { Q3, Q3M, Q3G, Q6MA, Q6AG, Q9 };
 
 // quaternion structure definition
-// struct fquaternion {
-//     double q0;  // scalar component
-//     double q1;  // x vector component
-//     double q2;  // y vector component
-//     double q3;  // z vector component
-// };
+struct fquaternion {
+    double q0;  // scalar component
+    double q1;  // x vector component
+    double q2;  // y vector component
+    double q3;  // z vector component
+};
 
 // We only care about fGpFast[3], so we'll just use that instead of this struct
 
 // // accelerometer sensor structure definition
 // struct AccelSensor {
-//     int32 iSumGpFast[3];  // sum of fast measurements
+//     int iSumGpFast[3];  // sum of fast measurements
 //     double fGpFast[3];     // fast (typically 200Hz) readings (g)
 //     double fGp[3];         // slow (typically 25Hz) averaged readings (g)
 //     double fgPerCount;     // initialized to FGPERCOUNT
-//     int16 iGpFast[3];     // fast (typically 200Hz) readings
-//     int16 iGp[3];         // slow (typically 25Hz) averaged readings (counts)
+//     int iGpFast[3];     // fast (typically 200Hz) readings
+//     int iGp[3];         // slow (typically 25Hz) averaged readings (counts)
 // };
 
 // For OVERSAMPLE_RATIO A.K.A. DECIMATION_FACTOR=1, we only care about fYp[3].
@@ -89,11 +89,11 @@ using quaternion_type = enum quaternion { Q3, Q3M, Q3G, Q6MA, Q6AG, Q9 };
 
 // // gyro sensor structure definition
 // struct GyroSensor {
-//     int32 iSumYpFast[3];                 // sum of fast measurements
+//     int iSumYpFast[3];                 // sum of fast measurements
 //     double fYp[3];                        // raw gyro sensor output (deg/s)
 //     double fDegPerSecPerCount;            // initialized to FDEGPERSECPERCOUNT
-//     int16 iYpFast[OVERSAMPLE_RATIO][3];  // fast (typically 200Hz) readings
-//     int16 iYp[3];                        // averaged gyro sensor output (counts)
+//     int iYpFast[OVERSAMPLE_RATIO][3];  // fast (typically 200Hz) readings
+//     int iYp[3];                        // averaged gyro sensor output (counts)
 // };
 
 #endif  // BUILD_HPP

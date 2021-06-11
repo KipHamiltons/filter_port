@@ -59,15 +59,15 @@ namespace filter::orientation {
         // the NED self-consistency twist occurs at 90 deg pitch
 
         // local variables
-        int16 i              = 0;    // counter
+        int i                = 0;    // counter
         double fmodGxyz      = NAN;  // modulus of the x, y, z accelerometer readings
         double fmodGyz       = NAN;  // modulus of the y, z accelerometer readings
         double frecipmodGxyz = NAN;  // reciprocal of modulus
         double ftmp          = NAN;  // scratch variable
 
         // compute the accelerometer squared magnitudes
-        fmodGyz  = fGp[Y] * fGp[Y] + fGp[Z] * fGp[Z];
-        fmodGxyz = fmodGyz + fGp[X] * fGp[X];
+        fmodGyz  = fGp[1] * fGp[1] + fGp[2] * fGp[2];
+        fmodGxyz = fmodGyz + fGp[0] * fGp[0];
 
         // check for freefall special case where no solution is possible
         if (fmodGxyz == 0.0F) {
@@ -78,14 +78,14 @@ namespace filter::orientation {
         // check for vertical up or down gimbal lock case
         if (fmodGyz == 0.0F) {
             f3x3matrixAeqScalar(fR, 0.0F);
-            fR[Y][Y] = 1.0F;
-            if (fGp[X] >= 0.0F) {
-                fR[X][Z] = 1.0F;
-                fR[Z][X] = -1.0F;
+            fR[1][1] = 1.0F;
+            if (fGp[0] >= 0.0F) {
+                fR[0][2] = 1.0F;
+                fR[2][0] = -1.0F;
             }
             else {
-                fR[X][Z] = -1.0F;
-                fR[Z][X] = 1.0F;
+                fR[0][2] = -1.0F;
+                fR[2][0] = 1.0F;
             }
             return;
         }
@@ -97,19 +97,19 @@ namespace filter::orientation {
         ftmp          = fmodGxyz / fmodGyz;
 
         // normalize the accelerometer reading into the z column
-        for (i = X; i <= Z; i++) {
-            fR[i][Z] = fGp[i] * frecipmodGxyz;
+        for (i = 0; i <= 2; i++) {
+            fR[i][2] = fGp[i] * frecipmodGxyz;
         }
 
         // construct x column of orientation matrix
-        fR[X][X] = fmodGyz * frecipmodGxyz;
-        fR[Y][X] = -fR[X][Z] * fR[Y][Z] * ftmp;
-        fR[Z][X] = -fR[X][Z] * fR[Z][Z] * ftmp;
+        fR[0][0] = fmodGyz * frecipmodGxyz;
+        fR[1][0] = -fR[0][2] * fR[1][2] * ftmp;
+        fR[2][0] = -fR[0][2] * fR[2][2] * ftmp;
 
         // // construct y column of orientation matrix
-        fR[X][Y] = 0.0F;
-        fR[Y][Y] = fR[Z][Z] * ftmp;
-        fR[Z][Y] = -fR[Y][Z] * ftmp;
+        fR[0][1] = 0.0F;
+        fR[1][1] = fR[2][2] * ftmp;
+        fR[2][1] = -fR[1][2] * ftmp;
     }
 
     // Android accelerometer 3DOF tilt function computing rotation matrix fR
@@ -128,11 +128,11 @@ namespace filter::orientation {
         double fmodGxz       = NAN;  // modulus of the x, z accelerometer readings
         double frecipmodGxyz = NAN;  // reciprocal of modulus
         double ftmp          = NAN;  // scratch variable
-        int8 i               = 0;    // counter
+        int i                = 0;    // counter
 
         // compute the accelerometer squared magnitudes
-        fmodGxz  = fGp[X] * fGp[X] + fGp[Z] * fGp[Z];
-        fmodGxyz = fmodGxz + fGp[Y] * fGp[Y];
+        fmodGxz  = fGp[0] * fGp[0] + fGp[2] * fGp[2];
+        fmodGxyz = fmodGxz + fGp[1] * fGp[1];
 
         // check for freefall special case where no solution is possible
         if (fmodGxyz == 0.0F) {
@@ -143,14 +143,14 @@ namespace filter::orientation {
         // check for vertical up or down gimbal lock case
         if (fmodGxz == 0.0F) {
             f3x3matrixAeqScalar(fR, 0.0F);
-            fR[X][X] = 1.0F;
-            if (fGp[Y] >= 0.0F) {
-                fR[Y][Z] = -1.0F;
-                fR[Z][Y] = 1.0F;
+            fR[0][0] = 1.0F;
+            if (fGp[1] >= 0.0F) {
+                fR[1][2] = -1.0F;
+                fR[2][1] = 1.0F;
             }
             else {
-                fR[Y][Z] = 1.0F;
-                fR[Z][Y] = -1.0F;
+                fR[1][2] = 1.0F;
+                fR[2][1] = -1.0F;
             }
             return;
         }
@@ -160,28 +160,28 @@ namespace filter::orientation {
         fmodGxyz      = std::sqrt(fmodGxyz);
         frecipmodGxyz = 1.0F / fmodGxyz;
         ftmp          = fmodGxyz / fmodGxz;
-        if (fGp[Z] < 0.0F) {
+        if (fGp[2] < 0.0F) {
             ftmp = -ftmp;
         }
 
         // normalize the negated accelerometer reading into the z column
-        for (i = X; i <= Z; i++) {
-            fR[i][Z] = -fGp[i] * frecipmodGxyz;
+        for (i = 0; i <= 2; i++) {
+            fR[i][2] = -fGp[i] * frecipmodGxyz;
         }
 
         // construct x column of orientation matrix
-        fR[X][X] = -fR[Z][Z] * ftmp;
-        fR[Y][X] = 0.0F;
-        fR[Z][X] = fR[X][Z] * ftmp;
+        fR[0][0] = -fR[2][2] * ftmp;
+        fR[1][0] = 0.0F;
+        fR[2][0] = fR[0][2] * ftmp;
         ;
 
         // // construct y column of orientation matrix
-        fR[X][Y] = fR[X][Z] * fR[Y][Z] * ftmp;
-        fR[Y][Y] = -fmodGxz * frecipmodGxyz;
-        if (fGp[Z] < 0.0F) {
-            fR[Y][Y] = -fR[Y][Y];
+        fR[0][1] = fR[0][2] * fR[1][2] * ftmp;
+        fR[1][1] = -fmodGxz * frecipmodGxyz;
+        if (fGp[2] < 0.0F) {
+            fR[1][1] = -fR[1][1];
         }
-        fR[Z][Y] = fR[Y][Z] * fR[Z][Z] * ftmp;
+        fR[2][1] = fR[1][2] * fR[2][2] * ftmp;
     }
 
     // Aerospace NED magnetometer 3DOF flat eCompass function computing rotation matrix fR
@@ -190,7 +190,7 @@ namespace filter::orientation {
         double fmodBxy = NAN;  // modulus of the x, y magnetometer readings
 
         // compute the magnitude of the horizontal (x and y) magnetometer reading
-        fmodBxy = std::sqrt(fBc[X] * fBc[X] + fBc[Y] * fBc[Y]);
+        fmodBxy = std::sqrt(fBc[0] * fBc[0] + fBc[1] * fBc[1]);
 
         // check for zero field special case where no solution is possible
         if (fmodBxy == 0.0F) {
@@ -199,13 +199,13 @@ namespace filter::orientation {
         }
 
         // define the fixed entries in the z row and column
-        fR[Z][X] = fR[Z][Y] = fR[X][Z] = fR[Y][Z] = 0.0F;
-        fR[Z][Z]                                  = 1.0F;
+        fR[2][0] = fR[2][1] = fR[0][2] = fR[1][2] = 0.0F;
+        fR[2][2]                                  = 1.0F;
 
         // define the remaining entries
-        fR[X][X] = fR[Y][Y] = fBc[X] / fmodBxy;
-        fR[Y][X]            = fBc[Y] / fmodBxy;
-        fR[X][Y]            = -fR[Y][X];
+        fR[0][0] = fR[1][1] = fBc[0] / fmodBxy;
+        fR[1][0]            = fBc[1] / fmodBxy;
+        fR[0][1]            = -fR[1][0];
     }
 
     // Android magnetometer 3DOF flat eCompass function computing rotation matrix fR
@@ -214,7 +214,7 @@ namespace filter::orientation {
         double fmodBxy = NAN;  // modulus of the x, y magnetometer readings
 
         // compute the magnitude of the horizontal (x and y) magnetometer reading
-        fmodBxy = std::sqrt(fBc[X] * fBc[X] + fBc[Y] * fBc[Y]);
+        fmodBxy = std::sqrt(fBc[0] * fBc[0] + fBc[1] * fBc[1]);
 
         // check for zero field special case where no solution is possible
         if (fmodBxy == 0.0F) {
@@ -223,13 +223,13 @@ namespace filter::orientation {
         }
 
         // define the fixed entries in the z row and column
-        fR[Z][X] = fR[Z][Y] = fR[X][Z] = fR[Y][Z] = 0.0F;
-        fR[Z][Z]                                  = 1.0F;
+        fR[2][0] = fR[2][1] = fR[0][2] = fR[1][2] = 0.0F;
+        fR[2][2]                                  = 1.0F;
 
         // define the remaining entries
-        fR[X][X] = fR[Y][Y] = fBc[Y] / fmodBxy;
-        fR[X][Y]            = fBc[X] / fmodBxy;
-        fR[Y][X]            = -fR[X][Y];
+        fR[0][0] = fR[1][1] = fBc[1] / fmodBxy;
+        fR[0][1]            = fBc[0] / fmodBxy;
+        fR[1][0]            = -fR[0][1];
     }
 
     // Windows 8 magnetometer 3DOF flat eCompass function computing rotation matrix fR
@@ -245,40 +245,40 @@ namespace filter::orientation {
         double fmodBc  = NAN;  // modulus of Bc
         double fGdotBc = NAN;  // dot product of vectors G.Bc
         double ftmp    = NAN;  // scratch variable
-        int8 i         = 0;
-        int8 j         = 0;  // loop counters
+        int i          = 0;
+        int j          = 0;  // loop counters
 
         // set the inclination angle to zero in case it is not computed later
         *pfDelta = 0.0F;
 
         // place the un-normalized gravity and geomagnetic vectors into the rotation matrix z and x axes
-        for (i = X; i <= Z; i++) {
-            fR[i][Z] = fGp[i];
-            fR[i][X] = fBc[i];
+        for (i = 0; i <= 2; i++) {
+            fR[i][2] = fGp[i];
+            fR[i][0] = fBc[i];
         }
 
         // set y vector to vector product of z and x vectors
-        fR[X][Y] = fR[Y][Z] * fR[Z][X] - fR[Z][Z] * fR[Y][X];
-        fR[Y][Y] = fR[Z][Z] * fR[X][X] - fR[X][Z] * fR[Z][X];
-        fR[Z][Y] = fR[X][Z] * fR[Y][X] - fR[Y][Z] * fR[X][X];
+        fR[0][1] = fR[1][2] * fR[2][0] - fR[2][2] * fR[1][0];
+        fR[1][1] = fR[2][2] * fR[0][0] - fR[0][2] * fR[2][0];
+        fR[2][1] = fR[0][2] * fR[1][0] - fR[1][2] * fR[0][0];
 
         // set x vector to vector product of y and z vectors
-        fR[X][X] = fR[Y][Y] * fR[Z][Z] - fR[Z][Y] * fR[Y][Z];
-        fR[Y][X] = fR[Z][Y] * fR[X][Z] - fR[X][Y] * fR[Z][Z];
-        fR[Z][X] = fR[X][Y] * fR[Y][Z] - fR[Y][Y] * fR[X][Z];
+        fR[0][0] = fR[1][1] * fR[2][2] - fR[2][1] * fR[1][2];
+        fR[1][0] = fR[2][1] * fR[0][2] - fR[0][1] * fR[2][2];
+        fR[2][0] = fR[0][1] * fR[1][2] - fR[1][1] * fR[0][2];
 
         // calculate the rotation matrix column moduli
-        fmod[X] = std::sqrt(fR[X][X] * fR[X][X] + fR[Y][X] * fR[Y][X] + fR[Z][X] * fR[Z][X]);
-        fmod[Y] = std::sqrt(fR[X][Y] * fR[X][Y] + fR[Y][Y] * fR[Y][Y] + fR[Z][Y] * fR[Z][Y]);
-        fmod[Z] = std::sqrt(fR[X][Z] * fR[X][Z] + fR[Y][Z] * fR[Y][Z] + fR[Z][Z] * fR[Z][Z]);
+        fmod[0] = std::sqrt(fR[0][0] * fR[0][0] + fR[1][0] * fR[1][0] + fR[2][0] * fR[2][0]);
+        fmod[1] = std::sqrt(fR[0][1] * fR[0][1] + fR[1][1] * fR[1][1] + fR[2][1] * fR[2][1]);
+        fmod[2] = std::sqrt(fR[0][2] * fR[0][2] + fR[1][2] * fR[1][2] + fR[2][2] * fR[2][2]);
 
         // normalize the rotation matrix columns
-        if (!((fmod[X] == 0.0F) || (fmod[Y] == 0.0F) || (fmod[Z] == 0.0F))) {
+        if (!((fmod[0] == 0.0F) || (fmod[1] == 0.0F) || (fmod[2] == 0.0F))) {
             // loop over columns j
-            for (j = X; j <= Z; j++) {
+            for (j = 0; j <= 2; j++) {
                 ftmp = 1.0F / fmod[j];
                 // loop over rows i
-                for (i = X; i <= Z; i++) {
+                for (i = 0; i <= 2; i++) {
                     // normalize by the column modulus
                     fR[i][j] *= ftmp;
                 }
@@ -291,10 +291,10 @@ namespace filter::orientation {
         }
 
         // compute the geomagnetic inclination angle
-        fmodBc  = std::sqrt(fBc[X] * fBc[X] + fBc[Y] * fBc[Y] + fBc[Z] * fBc[Z]);
-        fGdotBc = fGp[X] * fBc[X] + fGp[Y] * fBc[Y] + fGp[Z] * fBc[Z];
-        if (!((fmod[Z] == 0.0F) || (fmodBc == 0.0F))) {
-            *pfDelta = fasin_deg(fGdotBc / (fmod[Z] * fmodBc));
+        fmodBc  = std::sqrt(fBc[0] * fBc[0] + fBc[1] * fBc[1] + fBc[2] * fBc[2]);
+        fGdotBc = fGp[0] * fBc[0] + fGp[1] * fBc[1] + fGp[2] * fBc[2];
+        if (!((fmod[2] == 0.0F) || (fmodBc == 0.0F))) {
+            *pfDelta = fasin_deg(fGdotBc / (fmod[2] * fmodBc));
         }
     }
 
@@ -305,40 +305,40 @@ namespace filter::orientation {
         double fmodBc  = NAN;  // modulus of Bc
         double fGdotBc = NAN;  // dot product of vectors G.Bc
         double ftmp    = NAN;  // scratch variable
-        int8 i         = 0;
-        int8 j         = 0;  // loop counters
+        int i          = 0;
+        int j          = 0;  // loop counters
 
         // set the inclination angle to zero in case it is not computed later
         *pfDelta = 0.0F;
 
         // place the un-normalized gravity and geomagnetic vectors into the rotation matrix z and y axes
-        for (i = X; i <= Z; i++) {
-            fR[i][Z] = fGp[i];
-            fR[i][Y] = fBc[i];
+        for (i = 0; i <= 2; i++) {
+            fR[i][2] = fGp[i];
+            fR[i][1] = fBc[i];
         }
 
         // set x vector to vector product of y and z vectors
-        fR[X][X] = fR[Y][Y] * fR[Z][Z] - fR[Z][Y] * fR[Y][Z];
-        fR[Y][X] = fR[Z][Y] * fR[X][Z] - fR[X][Y] * fR[Z][Z];
-        fR[Z][X] = fR[X][Y] * fR[Y][Z] - fR[Y][Y] * fR[X][Z];
+        fR[0][0] = fR[1][1] * fR[2][2] - fR[2][1] * fR[1][2];
+        fR[1][0] = fR[2][1] * fR[0][2] - fR[0][1] * fR[2][2];
+        fR[2][0] = fR[0][1] * fR[1][2] - fR[1][1] * fR[0][2];
 
         // set y vector to vector product of z and x vectors
-        fR[X][Y] = fR[Y][Z] * fR[Z][X] - fR[Z][Z] * fR[Y][X];
-        fR[Y][Y] = fR[Z][Z] * fR[X][X] - fR[X][Z] * fR[Z][X];
-        fR[Z][Y] = fR[X][Z] * fR[Y][X] - fR[Y][Z] * fR[X][X];
+        fR[0][1] = fR[1][2] * fR[2][0] - fR[2][2] * fR[1][0];
+        fR[1][1] = fR[2][2] * fR[0][0] - fR[0][2] * fR[2][0];
+        fR[2][1] = fR[0][2] * fR[1][0] - fR[1][2] * fR[0][0];
 
         // calculate the rotation matrix column moduli
-        fmod[X] = std::sqrt(fR[X][X] * fR[X][X] + fR[Y][X] * fR[Y][X] + fR[Z][X] * fR[Z][X]);
-        fmod[Y] = std::sqrt(fR[X][Y] * fR[X][Y] + fR[Y][Y] * fR[Y][Y] + fR[Z][Y] * fR[Z][Y]);
-        fmod[Z] = std::sqrt(fR[X][Z] * fR[X][Z] + fR[Y][Z] * fR[Y][Z] + fR[Z][Z] * fR[Z][Z]);
+        fmod[0] = std::sqrt(fR[0][0] * fR[0][0] + fR[1][0] * fR[1][0] + fR[2][0] * fR[2][0]);
+        fmod[1] = std::sqrt(fR[0][1] * fR[0][1] + fR[1][1] * fR[1][1] + fR[2][1] * fR[2][1]);
+        fmod[2] = std::sqrt(fR[0][2] * fR[0][2] + fR[1][2] * fR[1][2] + fR[2][2] * fR[2][2]);
 
         // normalize the rotation matrix columns
-        if (!((fmod[X] == 0.0F) || (fmod[Y] == 0.0F) || (fmod[Z] == 0.0F))) {
+        if (!((fmod[0] == 0.0F) || (fmod[1] == 0.0F) || (fmod[2] == 0.0F))) {
             // loop over columns j
-            for (j = X; j <= Z; j++) {
+            for (j = 0; j <= 2; j++) {
                 ftmp = 1.0F / fmod[j];
                 // loop over rows i
-                for (i = X; i <= Z; i++) {
+                for (i = 0; i <= 2; i++) {
                     // normalize by the column modulus
                     fR[i][j] *= ftmp;
                 }
@@ -351,10 +351,10 @@ namespace filter::orientation {
         }
 
         // compute the geomagnetic inclination angle
-        fmodBc  = std::sqrt(fBc[X] * fBc[X] + fBc[Y] * fBc[Y] + fBc[Z] * fBc[Z]);
-        fGdotBc = fGp[X] * fBc[X] + fGp[Y] * fBc[Y] + fGp[Z] * fBc[Z];
-        if (!((fmod[Z] == 0.0F) || (fmodBc == 0.0F))) {
-            *pfDelta = fasin_deg(-fGdotBc / (fmod[Z] * fmodBc));
+        fmodBc  = std::sqrt(fBc[0] * fBc[0] + fBc[1] * fBc[1] + fBc[2] * fBc[2]);
+        fGdotBc = fGp[0] * fBc[0] + fGp[1] * fBc[1] + fGp[2] * fBc[2];
+        if (!((fmod[2] == 0.0F) || (fmodBc == 0.0F))) {
+            *pfDelta = fasin_deg(-fGdotBc / (fmod[2] * fmodBc));
         }
     }
 
@@ -365,41 +365,41 @@ namespace filter::orientation {
         double fmodBc  = NAN;  // modulus of Bc
         double fGdotBc = NAN;  // dot product of vectors G.Bc
         double ftmp    = NAN;  // scratch variable
-        int8 i         = 0;
-        int8 j         = 0;  // loop counters
+        int i          = 0;
+        int j          = 0;  // loop counters
 
         // set the inclination angle to zero in case it is not computed later
         *pfDelta = 0.0F;
 
         // place the negated un-normalized gravity and un-normalized geomagnetic vectors into the rotation matrix z and
         // y axes
-        for (i = X; i <= Z; i++) {
-            fR[i][Z] = -fGp[i];
-            fR[i][Y] = fBc[i];
+        for (i = 0; i <= 2; i++) {
+            fR[i][2] = -fGp[i];
+            fR[i][1] = fBc[i];
         }
 
         // set x vector to vector product of y and z vectors
-        fR[X][X] = fR[Y][Y] * fR[Z][Z] - fR[Z][Y] * fR[Y][Z];
-        fR[Y][X] = fR[Z][Y] * fR[X][Z] - fR[X][Y] * fR[Z][Z];
-        fR[Z][X] = fR[X][Y] * fR[Y][Z] - fR[Y][Y] * fR[X][Z];
+        fR[0][0] = fR[1][1] * fR[2][2] - fR[2][1] * fR[1][2];
+        fR[1][0] = fR[2][1] * fR[0][2] - fR[0][1] * fR[2][2];
+        fR[2][0] = fR[0][1] * fR[1][2] - fR[1][1] * fR[0][2];
 
         // set y vector to vector product of z and x vectors
-        fR[X][Y] = fR[Y][Z] * fR[Z][X] - fR[Z][Z] * fR[Y][X];
-        fR[Y][Y] = fR[Z][Z] * fR[X][X] - fR[X][Z] * fR[Z][X];
-        fR[Z][Y] = fR[X][Z] * fR[Y][X] - fR[Y][Z] * fR[X][X];
+        fR[0][1] = fR[1][2] * fR[2][0] - fR[2][2] * fR[1][0];
+        fR[1][1] = fR[2][2] * fR[0][0] - fR[0][2] * fR[2][0];
+        fR[2][1] = fR[0][2] * fR[1][0] - fR[1][2] * fR[0][0];
 
         // calculate the rotation matrix column moduli
-        fmod[X] = std::sqrt(fR[X][X] * fR[X][X] + fR[Y][X] * fR[Y][X] + fR[Z][X] * fR[Z][X]);
-        fmod[Y] = std::sqrt(fR[X][Y] * fR[X][Y] + fR[Y][Y] * fR[Y][Y] + fR[Z][Y] * fR[Z][Y]);
-        fmod[Z] = std::sqrt(fR[X][Z] * fR[X][Z] + fR[Y][Z] * fR[Y][Z] + fR[Z][Z] * fR[Z][Z]);
+        fmod[0] = std::sqrt(fR[0][0] * fR[0][0] + fR[1][0] * fR[1][0] + fR[2][0] * fR[2][0]);
+        fmod[1] = std::sqrt(fR[0][1] * fR[0][1] + fR[1][1] * fR[1][1] + fR[2][1] * fR[2][1]);
+        fmod[2] = std::sqrt(fR[0][2] * fR[0][2] + fR[1][2] * fR[1][2] + fR[2][2] * fR[2][2]);
 
         // normalize the rotation matrix columns
-        if (!((fmod[X] == 0.0F) || (fmod[Y] == 0.0F) || (fmod[Z] == 0.0F))) {
+        if (!((fmod[0] == 0.0F) || (fmod[1] == 0.0F) || (fmod[2] == 0.0F))) {
             // loop over columns j
-            for (j = X; j <= Z; j++) {
+            for (j = 0; j <= 2; j++) {
                 ftmp = 1.0F / fmod[j];
                 // loop over rows i
-                for (i = X; i <= Z; i++) {
+                for (i = 0; i <= 2; i++) {
                     // normalize by the column modulus
                     fR[i][j] *= ftmp;
                 }
@@ -412,10 +412,10 @@ namespace filter::orientation {
         }
 
         // compute the geomagnetic inclination angle
-        fmodBc  = std::sqrt(fBc[X] * fBc[X] + fBc[Y] * fBc[Y] + fBc[Z] * fBc[Z]);
-        fGdotBc = fGp[X] * fBc[X] + fGp[Y] * fBc[Y] + fGp[Z] * fBc[Z];
-        if (!((fmod[Z] == 0.0F) || (fmodBc == 0.0F))) {
-            *pfDelta = fasin_deg(fGdotBc / (fmod[Z] * fmodBc));
+        fmodBc  = std::sqrt(fBc[0] * fBc[0] + fBc[1] * fBc[1] + fBc[2] * fBc[2]);
+        fGdotBc = fGp[0] * fBc[0] + fGp[1] * fBc[1] + fGp[2] * fBc[2];
+        if (!((fmod[2] == 0.0F) || (fmodBc == 0.0F))) {
+            *pfDelta = fasin_deg(fGdotBc / (fmod[2] * fmodBc));
         }
     }
 
@@ -427,10 +427,10 @@ namespace filter::orientation {
                                          double* pfRhoDeg,
                                          double* pfChiDeg) {
         // calculate the pitch angle -90.0 <= Theta <= 90.0 deg
-        *pfTheDeg = fasin_deg(-R[X][Z]);
+        *pfTheDeg = fasin_deg(-R[0][2]);
 
         // calculate the roll angle range -180.0 <= Phi < 180.0 deg
-        *pfPhiDeg = fatan2_deg(R[Y][Z], R[Z][Z]);
+        *pfPhiDeg = fatan2_deg(R[1][2], R[2][2]);
 
         // map +180 roll onto the functionally equivalent -180 deg roll
         if (*pfPhiDeg == 180.0F) {
@@ -440,15 +440,15 @@ namespace filter::orientation {
         // calculate the yaw (compass) angle 0.0 <= Psi < 360.0 deg
         if (*pfTheDeg == 90.0F) {
             // vertical upwards gimbal lock case
-            *pfPsiDeg = fatan2_deg(R[Z][Y], R[Y][Y]) + *pfPhiDeg;
+            *pfPsiDeg = fatan2_deg(R[2][1], R[1][1]) + *pfPhiDeg;
         }
         else if (*pfTheDeg == -90.0F) {
             // vertical downwards gimbal lock case
-            *pfPsiDeg = fatan2_deg(-R[Z][Y], R[Y][Y]) - *pfPhiDeg;
+            *pfPsiDeg = fatan2_deg(-R[2][1], R[1][1]) - *pfPhiDeg;
         }
         else {
             // general case
-            *pfPsiDeg = fatan2_deg(R[X][Y], R[X][X]);
+            *pfPsiDeg = fatan2_deg(R[0][1], R[0][0]);
         }
 
         // map yaw angle Psi onto range 0.0 <= Psi < 360.0 deg
@@ -465,7 +465,7 @@ namespace filter::orientation {
         *pfRhoDeg = *pfPsiDeg;
 
         // calculate the tilt angle from vertical Chi (0 <= Chi <= 180 deg)
-        *pfChiDeg = facos_deg(R[Z][Z]);
+        *pfChiDeg = facos_deg(R[2][2]);
     }
 
     // extract the Android angles in degrees from the Android rotation matrix
@@ -476,10 +476,10 @@ namespace filter::orientation {
                                              double* pfRhoDeg,
                                              double* pfChiDeg) {
         // calculate the roll angle -90.0 <= Phi <= 90.0 deg
-        *pfPhiDeg = fasin_deg(R[X][Z]);
+        *pfPhiDeg = fasin_deg(R[0][2]);
 
         // calculate the pitch angle -180.0 <= The < 180.0 deg
-        *pfTheDeg = fatan2_deg(-R[Y][Z], R[Z][Z]);
+        *pfTheDeg = fatan2_deg(-R[1][2], R[2][2]);
 
         // map +180 pitch onto the functionally equivalent -180 deg pitch
         if (*pfTheDeg == 180.0F) {
@@ -489,15 +489,15 @@ namespace filter::orientation {
         // calculate the yaw (compass) angle 0.0 <= Psi < 360.0 deg
         if (*pfPhiDeg == 90.0F) {
             // vertical downwards gimbal lock case
-            *pfPsiDeg = fatan2_deg(R[Y][X], R[Y][Y]) - *pfTheDeg;
+            *pfPsiDeg = fatan2_deg(R[1][0], R[1][1]) - *pfTheDeg;
         }
         else if (*pfPhiDeg == -90.0F) {
             // vertical upwards gimbal lock case
-            *pfPsiDeg = fatan2_deg(R[Y][X], R[Y][Y]) + *pfTheDeg;
+            *pfPsiDeg = fatan2_deg(R[1][0], R[1][1]) + *pfTheDeg;
         }
         else {
             // // general case
-            *pfPsiDeg = fatan2_deg(-R[X][Y], R[X][X]);
+            *pfPsiDeg = fatan2_deg(-R[0][1], R[0][0]);
         }
 
         // map yaw angle Psi onto range 0.0 <= Psi < 360.0 deg
@@ -515,7 +515,7 @@ namespace filter::orientation {
         *pfRhoDeg = *pfPsiDeg;
 
         // calculate the tilt angle from vertical Chi (0 <= Chi <= 180 deg)
-        *pfChiDeg = facos_deg(R[Z][Z]);
+        *pfChiDeg = facos_deg(R[2][2]);
     }
 
     // extract the Windows 8 angles in degrees from the Windows 8 rotation matrix
@@ -526,8 +526,8 @@ namespace filter::orientation {
                                           double* pfRhoDeg,
                                           double* pfChiDeg) {
         // calculate the roll angle -90.0 <= Phi <= 90.0 deg
-        if (R[Z][Z] == 0.0F) {
-            if (R[X][Z] >= 0.0F) {
+        if (R[2][2] == 0.0F) {
+            if (R[0][2] >= 0.0F) {
                 // tan(phi) is -infinity
                 *pfPhiDeg = -90.0F;
             }
@@ -538,15 +538,15 @@ namespace filter::orientation {
         }
         else {
             // general case
-            *pfPhiDeg = fatan_deg(-R[X][Z] / R[Z][Z]);
+            *pfPhiDeg = fatan_deg(-R[0][2] / R[2][2]);
         }
 
         // first calculate the pitch angle The in the range -90.0 <= The <= 90.0 deg
-        *pfTheDeg = fasin_deg(R[Y][Z]);
+        *pfTheDeg = fasin_deg(R[1][2]);
 
-        // use R[Z][Z]=cos(Phi)*cos(The) to correct the quadrant of The remembering
-        // cos(Phi) is non-negative so that cos(The) has the same sign as R[Z][Z].
-        if (R[Z][Z] < 0.0F) {
+        // use R[2][2]=cos(Phi)*cos(The) to correct the quadrant of The remembering
+        // cos(Phi) is non-negative so that cos(The) has the same sign as R[2][2].
+        if (R[2][2] < 0.0F) {
             // wrap The around +90 deg and -90 deg giving result 90 to 270 deg
             *pfTheDeg = 180.0F - *pfTheDeg;
         }
@@ -559,15 +559,15 @@ namespace filter::orientation {
         // calculate the yaw angle Psi
         if (*pfTheDeg == 90.0F) {
             // vertical upwards gimbal lock case: -270 <= Psi < 90 deg
-            *pfPsiDeg = fatan2_deg(R[X][Y], R[X][X]) - *pfPhiDeg;
+            *pfPsiDeg = fatan2_deg(R[0][1], R[0][0]) - *pfPhiDeg;
         }
         else if (*pfTheDeg == -90.0F) {
             // vertical downwards gimbal lock case: -270 <= Psi < 90 deg
-            *pfPsiDeg = fatan2_deg(R[X][Y], R[X][X]) + *pfPhiDeg;
+            *pfPsiDeg = fatan2_deg(R[0][1], R[0][0]) + *pfPhiDeg;
         }
         else {
             // general case: -180 <= Psi < 180 deg
-            *pfPsiDeg = fatan2_deg(-R[Y][X], R[Y][Y]);
+            *pfPsiDeg = fatan2_deg(-R[1][0], R[1][1]);
 
             // correct the quadrant for Psi using the value of The (deg) to give -180 <= Psi < 380 deg
             if (std::fabs(*pfTheDeg) >= 90.0F) {
@@ -594,7 +594,7 @@ namespace filter::orientation {
         }
 
         // calculate the tilt angle from vertical Chi (0 <= Chi <= 180 deg)
-        *pfChiDeg = facos_deg(R[Z][Z]);
+        *pfChiDeg = facos_deg(R[2][2]);
     }
 
     // computes normalized rotation quaternion from a rotation vector (deg)
@@ -608,7 +608,7 @@ namespace filter::orientation {
         double ftmp       = NAN;  // scratch variable
 
         // compute the scaled rotation angle eta (deg) which can be both positve or negative
-        fetadeg  = fscaling * std::sqrt(rvecdeg[X] * rvecdeg[X] + rvecdeg[Y] * rvecdeg[Y] + rvecdeg[Z] * rvecdeg[Z]);
+        fetadeg  = fscaling * std::sqrt(rvecdeg[0] * rvecdeg[0] + rvecdeg[1] * rvecdeg[1] + rvecdeg[2] * rvecdeg[2]);
         fetarad  = fetadeg * FDEGTORAD;
         fetarad2 = fetarad * fetarad;
 
@@ -635,9 +635,9 @@ namespace filter::orientation {
         if (fetadeg != 0.0F) {
             // general case with non-zero rotation angle
             ftmp   = fscaling * sinhalfeta / fetadeg;
-            pq->q1 = rvecdeg[X] * ftmp;  // q1 = nx * sin(eta/2)
-            pq->q2 = rvecdeg[Y] * ftmp;  // q2 = ny * sin(eta/2)
-            pq->q3 = rvecdeg[Z] * ftmp;  // q3 = nz * sin(eta/2)
+            pq->q1 = rvecdeg[0] * ftmp;  // q1 = nx * sin(eta/2)
+            pq->q2 = rvecdeg[1] * ftmp;  // q2 = ny * sin(eta/2)
+            pq->q3 = rvecdeg[2] * ftmp;  // q3 = nz * sin(eta/2)
         }
         else {
             // zero rotation angle giving zero vector component
@@ -667,33 +667,33 @@ namespace filter::orientation {
         // the quaternion will also be normalized even if the case of small q0
 
         // get q0^2 and q0
-        fq0sq  = 0.25F * (1.0F + R[X][X] + R[Y][Y] + R[Z][Z]);
+        fq0sq  = 0.25F * (1.0F + R[0][0] + R[1][1] + R[2][2]);
         pq->q0 = std::sqrt(std::fabs(fq0sq));
 
         // normal case when q0 is not small meaning rotation angle not near 180 deg
         if (pq->q0 > SMALLQ0) {
             // calculate q1 to q3
             recip4q0 = 0.25F / pq->q0;
-            pq->q1   = recip4q0 * (R[Y][Z] - R[Z][Y]);
-            pq->q2   = recip4q0 * (R[Z][X] - R[X][Z]);
-            pq->q3   = recip4q0 * (R[X][Y] - R[Y][X]);
+            pq->q1   = recip4q0 * (R[1][2] - R[2][1]);
+            pq->q2   = recip4q0 * (R[2][0] - R[0][2]);
+            pq->q3   = recip4q0 * (R[0][1] - R[1][0]);
         }  // end of general case
         else {
             // special case of near 180 deg corresponds to nearly symmetric matrix
             // which is not numerically well conditioned for division by small q0
             // instead get absolute values of q1 to q3 from leading diagonal
-            pq->q1 = std::sqrt(std::fabs(0.5F * (1.0F + R[X][X]) - fq0sq));
-            pq->q2 = std::sqrt(std::fabs(0.5F * (1.0F + R[Y][Y]) - fq0sq));
-            pq->q3 = std::sqrt(std::fabs(0.5F * (1.0F + R[Z][Z]) - fq0sq));
+            pq->q1 = std::sqrt(std::fabs(0.5F * (1.0F + R[0][0]) - fq0sq));
+            pq->q2 = std::sqrt(std::fabs(0.5F * (1.0F + R[1][1]) - fq0sq));
+            pq->q3 = std::sqrt(std::fabs(0.5F * (1.0F + R[2][2]) - fq0sq));
 
             // correct the signs of q1 to q3 by examining the signs of differenced off-diagonal terms
-            if ((R[Y][Z] - R[Z][Y]) < 0.0F) {
+            if ((R[1][2] - R[2][1]) < 0.0F) {
                 pq->q1 = -pq->q1;
             }
-            if ((R[Z][X] - R[X][Z]) < 0.0F) {
+            if ((R[2][0] - R[0][2]) < 0.0F) {
                 pq->q2 = -pq->q2;
             }
-            if ((R[X][Y] - R[Y][X]) < 0.0F) {
+            if ((R[0][1] - R[1][0]) < 0.0F) {
                 pq->q3 = -pq->q3;
             }
         }  // end of special case
@@ -729,15 +729,15 @@ namespace filter::orientation {
         f2q3q3 = 2.0F * pq->q3 * pq->q3;
 
         // calculate the rotation matrix assuming the quaternion is normalized
-        R[X][X] = f2q0q0 + f2q1q1 - 1.0F;
-        R[X][Y] = f2q1q2 + f2q0q3;
-        R[X][Z] = f2q1q3 - f2q0q2;
-        R[Y][X] = f2q1q2 - f2q0q3;
-        R[Y][Y] = f2q0q0 + f2q2q2 - 1.0F;
-        R[Y][Z] = f2q2q3 + f2q0q1;
-        R[Z][X] = f2q1q3 + f2q0q2;
-        R[Z][Y] = f2q2q3 - f2q0q1;
-        R[Z][Z] = f2q0q0 + f2q3q3 - 1.0F;
+        R[0][0] = f2q0q0 + f2q1q1 - 1.0F;
+        R[0][1] = f2q1q2 + f2q0q3;
+        R[0][2] = f2q1q3 - f2q0q2;
+        R[1][0] = f2q1q2 - f2q0q3;
+        R[1][1] = f2q0q0 + f2q2q2 - 1.0F;
+        R[1][2] = f2q2q3 + f2q0q1;
+        R[2][0] = f2q1q3 + f2q0q2;
+        R[2][1] = f2q2q3 - f2q0q1;
+        R[2][2] = f2q0q0 + f2q3q3 - 1.0F;
 
         return;
     }
@@ -752,7 +752,7 @@ namespace filter::orientation {
         // calculate the trace of the rotation matrix = 1+2cos(eta) in range -1 to +3
         // and eta (deg) in range 0 to 180 deg inclusive
         // checking for rounding errors that might take the trace outside this range
-        ftrace = R[X][X] + R[Y][Y] + R[Z][Z];
+        ftrace = R[0][0] + R[1][1] + R[2][2];
         if (ftrace >= 3.0F) {
             fetadeg = 0.0F;
         }
@@ -766,41 +766,41 @@ namespace filter::orientation {
         // set the rvecdeg vector to differences across the diagonal = 2*n*sin(eta)
         // and calculate its modulus equal to 2|sin(eta)|
         // the modulus approaches zero near 0 and 180 deg (when sin(eta) approaches zero)
-        rvecdeg[X] = R[Y][Z] - R[Z][Y];
-        rvecdeg[Y] = R[Z][X] - R[X][Z];
-        rvecdeg[Z] = R[X][Y] - R[Y][X];
-        fmodulus   = std::sqrt(rvecdeg[X] * rvecdeg[X] + rvecdeg[Y] * rvecdeg[Y] + rvecdeg[Z] * rvecdeg[Z]);
+        rvecdeg[0] = R[1][2] - R[2][1];
+        rvecdeg[1] = R[2][0] - R[0][2];
+        rvecdeg[2] = R[0][1] - R[1][0];
+        fmodulus   = std::sqrt(rvecdeg[0] * rvecdeg[0] + rvecdeg[1] * rvecdeg[1] + rvecdeg[2] * rvecdeg[2]);
 
         // normalize the rotation vector for general, 0 deg and 180 deg rotation cases
         if (fmodulus > SMALLMODULUS) {
             // general case away from 0 and 180 deg rotation
             ftmp = fetadeg / fmodulus;
-            rvecdeg[X] *= ftmp;  // set x component to eta(deg) * nx
-            rvecdeg[Y] *= ftmp;  // set y component to eta(deg) * ny
-            rvecdeg[Z] *= ftmp;  // set z component to eta(deg) * nz
+            rvecdeg[0] *= ftmp;  // set x component to eta(deg) * nx
+            rvecdeg[1] *= ftmp;  // set y component to eta(deg) * ny
+            rvecdeg[2] *= ftmp;  // set z component to eta(deg) * nz
         }                        // end of general case
         else if (ftrace >= 0.0F) {
             // near 0 deg rotation (trace = 3): matrix is nearly identity matrix
-            // R[Y][Z]-R[Z][Y]=2*nx*eta(rad) and similarly for other components
+            // R[1][2]-R[2][1]=2*nx*eta(rad) and similarly for other components
             ftmp = 0.5F * FRADTODEG;
-            rvecdeg[X] *= ftmp;
-            rvecdeg[Y] *= ftmp;
-            rvecdeg[Z] *= ftmp;
+            rvecdeg[0] *= ftmp;
+            rvecdeg[1] *= ftmp;
+            rvecdeg[2] *= ftmp;
         }  // end of zero deg case
         else {
             // near 180 deg (trace = -1): matrix is nearly symmetric
             // calculate the absolute value of the components of the axis-angle vector
-            rvecdeg[X] = 180.0F * std::sqrt(std::fabs(0.5F * (R[X][X] + 1.0F)));
-            rvecdeg[Y] = 180.0F * std::sqrt(std::fabs(0.5F * (R[Y][Y] + 1.0F)));
-            rvecdeg[Z] = 180.0F * std::sqrt(std::fabs(0.5F * (R[Z][Z] + 1.0F)));
+            rvecdeg[0] = 180.0F * std::sqrt(std::fabs(0.5F * (R[0][0] + 1.0F)));
+            rvecdeg[1] = 180.0F * std::sqrt(std::fabs(0.5F * (R[1][1] + 1.0F)));
+            rvecdeg[2] = 180.0F * std::sqrt(std::fabs(0.5F * (R[2][2] + 1.0F)));
 
             // correct the signs of the three components by examining the signs of differenced off-diagonal terms
-            if ((R[Y][Z] - R[Z][Y]) < 0.0F)
-                rvecdeg[X] = -rvecdeg[X];
-            if ((R[Z][X] - R[X][Z]) < 0.0F)
-                rvecdeg[Y] = -rvecdeg[Y];
-            if ((R[X][Y] - R[Y][X]) < 0.0F)
-                rvecdeg[Z] = -rvecdeg[Z];
+            if ((R[1][2] - R[2][1]) < 0.0F)
+                rvecdeg[0] = -rvecdeg[0];
+            if ((R[2][0] - R[0][2]) < 0.0F)
+                rvecdeg[1] = -rvecdeg[1];
+            if ((R[0][1] - R[1][0]) < 0.0F)
+                rvecdeg[2] = -rvecdeg[2];
 
         }  // end of 180 deg case
 
@@ -838,14 +838,14 @@ namespace filter::orientation {
         // calculate the rotation vector (deg)
         if (sinhalfeta == 0.0F) {
             // the rotation angle eta is zero and the axis is irrelevant
-            rvecdeg[X] = rvecdeg[Y] = rvecdeg[Z] = 0.0F;
+            rvecdeg[0] = rvecdeg[1] = rvecdeg[2] = 0.0F;
         }
         else {
             // general case with non-zero rotation angle
             ftmp       = fetadeg / sinhalfeta;
-            rvecdeg[X] = pq->q1 * ftmp;
-            rvecdeg[Y] = pq->q2 * ftmp;
-            rvecdeg[Z] = pq->q3 * ftmp;
+            rvecdeg[0] = pq->q1 * ftmp;
+            rvecdeg[1] = pq->q2 * ftmp;
+            rvecdeg[2] = pq->q3 * ftmp;
         }
 
         return;
@@ -857,7 +857,7 @@ namespace filter::orientation {
                                    double flpf,
                                    double fdeltat,
                                    double fOmega[],
-                                   int32 loopcounter) {
+                                   int loopcounter) {
         // local variables
         struct fquaternion fdeltaq;  // delta rotation quaternion
         double rvecdeg[3];           // rotation vector (deg)
@@ -903,9 +903,9 @@ namespace filter::orientation {
         // calculate the delta rotation vector from fdeltaqn and the virtual gyro angular velocity (deg/s)
         fRotationVectorDegFromQuaternion(&fdeltaq, rvecdeg);
         ftmp      = 1.0F / fdeltat;
-        fOmega[X] = rvecdeg[X] * ftmp;
-        fOmega[Y] = rvecdeg[Y] * ftmp;
-        fOmega[Z] = rvecdeg[Z] * ftmp;
+        fOmega[0] = rvecdeg[0] * ftmp;
+        fOmega[1] = rvecdeg[1] * ftmp;
+        fOmega[2] = rvecdeg[2] * ftmp;
 
         // set LPq[n] = LPq[n-1] . deltaq[n]
         qAeqAxB(pLPq, &fdeltaq);
@@ -918,7 +918,7 @@ namespace filter::orientation {
     }
 
     // function low pass filters a scalar
-    void fLPFScalar(double* pfS, double* pfLPS, double flpf, int32 loopcounter) {
+    void fLPFScalar(double* pfS, double* pfLPS, double flpf, int loopcounter) {
         // set S[LP,n]=S[n] on first pass
         if (loopcounter == 0) {
             *pfLPS = *pfS;

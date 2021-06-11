@@ -44,7 +44,7 @@ namespace filter::tasks {
         // angular velocity
         double fOmega[3];  // angular velocity (deg/s)
         // systick timer for benchmarking
-        int32 systick;  // systick timer
+        int systick;  // systick timer
         // end: elements common to all motion state vectors
 
         // elements transmitted over bluetooth in kalman packet
@@ -53,30 +53,30 @@ namespace filter::tasks {
         double fbErrPl[3];   // gyro offset error (deg/s)
         // end elements transmitted in kalman packet
 
-        double fzErrMi[3];            // angular error (deg) between a priori and eCompass
-                                      // orientations
-        double fRMi[3][3];            // a priori rotation matrix
-        struct fquaternion fqMi;      // a priori orientation quaternion
-        struct fquaternion fDeltaq;   // delta a priori or a posteriori quaternion
-        double faSePl[3];             // linear acceleration (g, sensor frame)
-        double faErrSePl[3];          // linear acceleration error (g, sensor frame)
-        double fgErrSeMi[3];          // difference (g, sensor frame) of gravity vector (accel)
-                                      // and gravity vector (gyro)
-        double fgSeGyMi[3];           // gravity vector (g, sensor frame) measurement from gyro
-        double faSeMi[3];             // linear acceleration (g, sensor frame)
-        double fQvAA;                 // accelerometer terms of Qv
-        double fPPlus9x9[9][9];       // covariance matrix P+
-        double fK9x3[9][3];           // kalman filter gain matrix K
-        double fQw9x9[9][9];          // covariance matrix Qw
-        double fC3x9[3][9];           // measurement matrix C
-        double fcasq;                 // FCA * FCA;
-        double fFastdeltat;           // sensor sampling interval (s) = 1 / SENSORFS
-        double fdeltat;               // kalman filter sampling interval (s) = OVERSAMPLE_RATIO /
-                                      // SENSORFS
-        double fdeltatsq;             // fdeltat * fdeltat;
-        double fQwbplusQvG;           // FQWB + FQVG;
-        int16 iFirstOrientationLock;  // denotes that 6DOF orientation has locked to 3DOF
-        int8 resetflag;               // flag to request re-initialization on next pass
+        double fzErrMi[3];           // angular error (deg) between a priori and eCompass
+                                     // orientations
+        double fRMi[3][3];           // a priori rotation matrix
+        struct fquaternion fqMi;     // a priori orientation quaternion
+        struct fquaternion fDeltaq;  // delta a priori or a posteriori quaternion
+        double faSePl[3];            // linear acceleration (g, sensor frame)
+        double faErrSePl[3];         // linear acceleration error (g, sensor frame)
+        double fgErrSeMi[3];         // difference (g, sensor frame) of gravity vector (accel)
+                                     // and gravity vector (gyro)
+        double fgSeGyMi[3];          // gravity vector (g, sensor frame) measurement from gyro
+        double faSeMi[3];            // linear acceleration (g, sensor frame)
+        double fQvAA;                // accelerometer terms of Qv
+        double fPPlus9x9[9][9];      // covariance matrix P+
+        double fK9x3[9][3];          // kalman filter gain matrix K
+        double fQw9x9[9][9];         // covariance matrix Qw
+        double fC3x9[3][9];          // measurement matrix C
+        double fcasq;                // FCA * FCA;
+        double fFastdeltat;          // sensor sampling interval (s) = 1 / SENSORFS
+        double fdeltat;              // kalman filter sampling interval (s) = OVERSAMPLE_RATIO /
+                                     // SENSORFS
+        double fdeltatsq;            // fdeltat * fdeltat;
+        double fQwbplusQvG;          // FQWB + FQVG;
+        int iFirstOrientationLock;   // denotes that 6DOF orientation has locked to 3DOF
+        int resetflag;               // flag to request re-initialization on next pass
     };
 
     // globals defined in tasks_func.c declared here for use elsewhere
@@ -87,7 +87,7 @@ namespace filter::tasks {
     // function prototypes for functions in tasks_func.c
     void ApplyAccelHAL(struct AccelSensor* pthisAccel);
     void ApplyMagHAL(struct MagSensor* pthisMag);
-    void ApplyGyroHAL(struct GyroSensor* pthisGyro, int16 irow);
+    void ApplyGyroHAL(struct GyroSensor* pthisGyro, int irow);
     void RdSensData_Init();
     void RdSensData_Run();
     void Fusion_Init();

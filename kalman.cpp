@@ -57,8 +57,8 @@ namespace filter::kalman {
 
     // function initalizes the 6DOF accel + gyro Kalman filter algorithm
     void fInit_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN* pthisSV, int iSensorFS, int iOverSampleRatio) {
-        int8 i = 0;
-        int8 j = 0;  // loop counters
+        int i = 0;
+        int j = 0;  // loop counters
 
         // reset the flag denoting that a first 6DOpthisSVtion lock has been achieved
         pthisSV->iFirstOrientationLock = 0;
@@ -81,7 +81,7 @@ namespace filter::kalman {
         // zero a posteriori orientation, error vector xe+ (thetae+, be+, ae+) and b+
         f3x3matrixAeqI(pthisSV->fRPl);
         fqAeq1(&(pthisSV->fqPl));
-        for (i = X; i <= Z; i++) {
+        for (i = 0; i <= 2; i++) {
             pthisSV->fThErrPl[i] = pthisSV->fbErrPl[i] = pthisSV->faErrSePl[i] = pthisSV->fbPl[i] = 0.0F;
         }
 
@@ -139,15 +139,15 @@ namespace filter::kalman {
         double* pfC3x9ik     = nullptr;
         double* pfC3x9jk     = nullptr;
 
-        int8 i = 0;
-        int8 j = 0;
-        int8 k = 0;  // loop counters
+        int i = 0;
+        int j = 0;
+        int k = 0;  // loop counters
 
         // working arrays for 3x3 matrix inversion
         double* pfRows[3];
-        int8 iColInd[3];
-        int8 iRowInd[3];
-        int8 iPivot[3];
+        int iColInd[3];
+        int iRowInd[3];
+        int iPivot[3];
 
         // do a reset and return if requested
         if (pthisSV->resetflag != 0) {
@@ -189,7 +189,7 @@ namespace filter::kalman {
         // omega[k] = yG[k] - b-[k] = yG[k] - b+[k-1] (deg/s)
         // this involves a small angle approximation but the resulting angular velocity is
         // only computed for transmission over bluetooth and not used for orientation determination.
-        for (i = X; i <= Z; i++) {
+        for (i = 0; i <= 2; i++) {
             // pthisSV->fOmega[i] = pthisGyro->fYp[i] - pthisSV->fbPl[i];
             pthisSV->fOmega[i] = gyro_reading[i] - pthisSV->fbPl[i];
         }
@@ -203,7 +203,7 @@ namespace filter::kalman {
         // integrate the buffered high frequency (typically 200Hz) gyro readings
         // for (j = 0; j < iOverSampleRatio; j++) {
         //     // compute the incremental fast (typically 200Hz) rotation vector rvec (deg)
-        //     for (i = X; i <= Z; i++) {
+        //     for (i = 0; i <= 2; i++) {
         //         rvec[i] = (((double) pthisGyro->iYpFast[j][i] * pthisGyro->fDegPerSecPerCount) - pthisSV->fbPl[i])
         //                   * pthisSV->fFastdeltat;
         //     }
@@ -226,14 +226,14 @@ namespace filter::kalman {
 
         // compute the a priori **gyro** estimate of the gravitational vector (g, sensor frame)
         // using an absolute rotation of the global frame gravity vector (with magnitude 1g)
-        for (i = X; i <= Z; i++) {
+        for (i = 0; i <= 2; i++) {
             if (ithisCoordSystem == NED) {
                 // NED gravity is along positive z axis
-                pthisSV->fgSeGyMi[i] = pthisSV->fRMi[i][Z];
+                pthisSV->fgSeGyMi[i] = pthisSV->fRMi[i][2];
             }
             else {
                 // Android and Win8 gravity are along negative z axis
-                pthisSV->fgSeGyMi[i] = -pthisSV->fRMi[i][Z];
+                pthisSV->fgSeGyMi[i] = -pthisSV->fRMi[i][2];
             }
 
             // compute a priori acceleration (a-) (g, sensor frame) from a posteriori estimate (g, sensor frame)
@@ -257,9 +257,9 @@ namespace filter::kalman {
         // *********************************************************************************
 
         // update measurement matrix C (3x9) with -alpha(g-)x from gyro (g, sensor frame)
-        pthisSV->fC3x9[0][1] = FDEGTORAD * pthisSV->fgSeGyMi[Z];
-        pthisSV->fC3x9[0][2] = -FDEGTORAD * pthisSV->fgSeGyMi[Y];
-        pthisSV->fC3x9[1][2] = FDEGTORAD * pthisSV->fgSeGyMi[X];
+        pthisSV->fC3x9[0][1] = FDEGTORAD * pthisSV->fgSeGyMi[2];
+        pthisSV->fC3x9[0][2] = -FDEGTORAD * pthisSV->fgSeGyMi[1];
+        pthisSV->fC3x9[1][2] = FDEGTORAD * pthisSV->fgSeGyMi[0];
         pthisSV->fC3x9[1][0] = -pthisSV->fC3x9[0][1];
         pthisSV->fC3x9[2][0] = -pthisSV->fC3x9[0][2];
         pthisSV->fC3x9[2][1] = -pthisSV->fC3x9[1][2];
@@ -426,7 +426,7 @@ namespace filter::kalman {
         // *********************************************************************************
 
         // update the a posteriori state vector
-        for (i = X; i <= Z; i++) {
+        for (i = 0; i <= 2; i++) {
             // zero a posteriori error terms
             pthisSV->fThErrPl[i] = pthisSV->fbErrPl[i] = pthisSV->faErrSePl[i] = 0.0F;
 
@@ -460,7 +460,7 @@ namespace filter::kalman {
         fRotationVectorDegFromQuaternion(&(pthisSV->fqPl), pthisSV->fRVecPl);
 
         // update the a posteriori gyro offset vector b+ and linear acceleration vector a+ (sensor frame)
-        for (i = X; i <= Z; i++) {
+        for (i = 0; i <= 2; i++) {
             // b+[k] = b-[k] - be+[k] = b+[k] - be+[k] (deg/s)
             pthisSV->fbPl[i] -= pthisSV->fbErrPl[i];
             // a+ = a- - ae+ (g, sensor frame)

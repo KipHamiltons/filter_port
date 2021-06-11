@@ -75,10 +75,10 @@ double filter::approximations::facos_deg(double x) {
 // function returns angle in range -90 to 90 deg
 // maximum error is 9.84E-6 deg
 double filter::approximations::fatan_deg(double x) {
-    double fangledeg  = NAN;  // compute computed (deg)
-    int8 ixisnegative = 0;    // argument x is negative
-    int8 ixexceeds1   = 0;    // argument x is greater than 1.0
-    int8 ixmapped     = 0;    // argument in range tan(15 deg) to tan(45 deg)=1.0
+    double fangledeg = NAN;  // compute computed (deg)
+    int ixisnegative = 0;    // argument x is negative
+    int ixexceeds1   = 0;    // argument x is greater than 1.0
+    int ixmapped     = 0;    // argument in range tan(15 deg) to tan(45 deg)=1.0
 
 #define TAN15DEG 0.26794919243F  // tan(15 deg) = 2 - sqrt(3)
 #define TAN30DEG 0.57735026919F  // tan(30 deg) = 1/sqrt(3)

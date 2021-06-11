@@ -43,8 +43,8 @@ namespace filter::matrix {
     // function sets the 3x3 matrix A to the identity matrix
     void f3x3matrixAeqI(double A[][3]) {
         double* pAij = nullptr;  // pointer to A[i][j]
-        int8 i       = 0;
-        int8 j       = 0;  // loop counters
+        int i        = 0;
+        int j        = 0;  // loop counters
 
         for (i = 0; i < 3; i++) {
             // set pAij to &A[i][j=0]
@@ -57,12 +57,12 @@ namespace filter::matrix {
     }
 
     // function sets the matrix A to the identity matrix
-    void fmatrixAeqI(double* A[], int16 rc) {
+    void fmatrixAeqI(double* A[], int rc) {
         // rc = rows and columns in A
 
         double* pAij = nullptr;  // pointer to A[i][j]
-        int8 i       = 0;
-        int8 j       = 0;  // loop counters
+        int i        = 0;
+        int j        = 0;  // loop counters
 
         for (i = 0; i < rc; i++) {
             // set pAij to &A[i][j=0]
@@ -77,8 +77,8 @@ namespace filter::matrix {
     // function sets every entry in the 3x3 matrix A to a constant scalar
     void f3x3matrixAeqScalar(double A[][3], double Scalar) {
         double* pAij = nullptr;  // pointer to A[i][j]
-        int8 i       = 0;
-        int8 j       = 0;  // counters
+        int i        = 0;
+        int j        = 0;  // counters
 
         for (i = 0; i < 3; i++) {
             // set pAij to &A[i][j=0]
@@ -92,8 +92,8 @@ namespace filter::matrix {
     // function multiplies all elements of 3x3 matrix A by the specified scalar
     void f3x3matrixAeqAxScalar(double A[][3], double Scalar) {
         double* pAij = nullptr;  // pointer to A[i][j]
-        int8 i       = 0;
-        int8 j       = 0;  // loop counters
+        int i        = 0;
+        int j        = 0;  // loop counters
 
         for (i = 0; i < 3; i++) {
             // set pAij to &A[i][j=0]
@@ -107,8 +107,8 @@ namespace filter::matrix {
     // function negates all elements of 3x3 matrix A
     void f3x3matrixAeqMinusA(double A[][3]) {
         double* pAij = nullptr;  // pointer to A[i][j]
-        int8 i       = 0;
-        int8 j       = 0;  // loop counters
+        int i        = 0;
+        int j        = 0;  // loop counters
 
         for (i = 0; i < 3; i++) {
             // set pAij to &A[i][j=0]
@@ -154,8 +154,8 @@ namespace filter::matrix {
 
     // function calculates the determinant of a 3x3 matrix
     double f3x3matrixDetA(double A[][3]) {
-        return (A[X][X] * (A[Y][Y] * A[Z][Z] - A[Y][Z] * A[Z][Y]) + A[X][Y] * (A[Y][Z] * A[Z][X] - A[Y][X] * A[Z][Z])
-                + A[X][Z] * (A[Y][X] * A[Z][Y] - A[Y][Y] * A[Z][X]));
+        return (A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) + A[0][1] * (A[1][2] * A[2][0] - A[1][0] * A[2][2])
+                + A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0]));
     }
 
     // function computes all eigenvalues and eigenvectors of a real symmetric matrix A[0..n-1][0..n-1]
@@ -164,7 +164,7 @@ namespace filter::matrix {
     // eigval[0..n-1] returns the eigenvalues of A[][].
     // eigvec[0..n-1][0..n-1] returns the normalized eigenvectors of A[][]
     // the eigenvectors are not sorted by value
-    void eigencompute(double A[][10], double eigval[], double eigvec[][10], int8 n) {
+    void eigencompute(double A[][10], double eigval[], double eigvec[][10], int n) {
         // maximum number of iterations to achieve convergence: in practice 6 is typical
 #define NITERATIONS 15
 
@@ -179,11 +179,11 @@ namespace filter::matrix {
         // residue from remaining non-zero above diagonal terms
         double residue;
         // matrix row and column indices
-        int8 ir, ic;
+        int ir, ic;
         // general loop counter
-        int8 j;
+        int j;
         // timeout ctr for number of passes of the algorithm
-        int8 ctr;
+        int ctr;
 
         // initialize eigenvectors matrix and eigenvalues array
         for (ir = 0; ir < n; ir++) {
@@ -299,13 +299,13 @@ namespace filter::matrix {
 
     // function uses Gauss-Jordan elimination to compute the inverse of matrix A in situ
     // on exit, A is replaced with its inverse
-    void fmatrixAeqInvA(double* A[], int8 iColInd[], int8 iRowInd[], int8 iPivot[], int8 isize) {
-        double largest;             // largest element used for pivoting
-        double scaling;             // scaling factor in pivoting
-        double recippiv;            // reciprocal of pivot element
-        double ftmp;                // temporary variable used in swaps
-        int8 i, j, k, l, m;         // index counters
-        int8 iPivotRow, iPivotCol;  // row and column of pivot element
+    void fmatrixAeqInvA(double* A[], int iColInd[], int iRowInd[], int iPivot[], int isize) {
+        double largest;            // largest element used for pivoting
+        double scaling;            // scaling factor in pivoting
+        double recippiv;           // reciprocal of pivot element
+        double ftmp;               // temporary variable used in swaps
+        int i, j, k, l, m;         // index counters
+        int iPivotRow, iPivotCol;  // row and column of pivot element
 
         // to avoid compiler warnings
         iPivotRow = iPivotCol = 0;
@@ -417,45 +417,45 @@ namespace filter::matrix {
         double ftmp;  // scratch variable
 
         // normalize the X column of the low pass filtered orientation matrix
-        ftmp = std::sqrt(A[X][X] * A[X][X] + A[Y][X] * A[Y][X] + A[Z][X] * A[Z][X]);
+        ftmp = std::sqrt(A[0][0] * A[0][0] + A[1][0] * A[1][0] + A[2][0] * A[2][0]);
         if (ftmp > CORRUPTMATRIX) {
             // normalize the x column vector
             ftmp = 1.0F / ftmp;
-            A[X][X] *= ftmp;
-            A[Y][X] *= ftmp;
-            A[Z][X] *= ftmp;
+            A[0][0] *= ftmp;
+            A[1][0] *= ftmp;
+            A[2][0] *= ftmp;
         }
         else {
             // set x column vector to {1, 0, 0}
-            A[X][X] = 1.0F;
-            A[Y][X] = A[Z][X] = 0.0F;
+            A[0][0] = 1.0F;
+            A[1][0] = A[2][0] = 0.0F;
         }
 
         // force the y column vector to be orthogonal to x using y = y-(x.y)x
-        ftmp = A[X][X] * A[X][Y] + A[Y][X] * A[Y][Y] + A[Z][X] * A[Z][Y];
-        A[X][Y] -= ftmp * A[X][X];
-        A[Y][Y] -= ftmp * A[Y][X];
-        A[Z][Y] -= ftmp * A[Z][X];
+        ftmp = A[0][0] * A[0][1] + A[1][0] * A[1][1] + A[2][0] * A[2][1];
+        A[0][1] -= ftmp * A[0][0];
+        A[1][1] -= ftmp * A[1][0];
+        A[2][1] -= ftmp * A[2][0];
 
         // normalize the y column vector
-        ftmp = std::sqrt(A[X][Y] * A[X][Y] + A[Y][Y] * A[Y][Y] + A[Z][Y] * A[Z][Y]);
+        ftmp = std::sqrt(A[0][1] * A[0][1] + A[1][1] * A[1][1] + A[2][1] * A[2][1]);
         if (ftmp > CORRUPTMATRIX) {
             // normalize the y column vector
             ftmp = 1.0F / ftmp;
-            A[X][Y] *= ftmp;
-            A[Y][Y] *= ftmp;
-            A[Z][Y] *= ftmp;
+            A[0][1] *= ftmp;
+            A[1][1] *= ftmp;
+            A[2][1] *= ftmp;
         }
         else {
             // set y column vector to {0, 1, 0}
-            A[Y][Y] = 1.0F;
-            A[X][Y] = A[Z][Y] = 0.0F;
+            A[1][1] = 1.0F;
+            A[0][1] = A[2][1] = 0.0F;
         }
 
         // finally set the z column vector to x vector cross y vector (automatically normalized)
-        A[X][Z] = A[Y][X] * A[Z][Y] - A[Z][X] * A[Y][Y];
-        A[Y][Z] = A[Z][X] * A[X][Y] - A[X][X] * A[Z][Y];
-        A[Z][Z] = A[X][X] * A[Y][Y] - A[Y][X] * A[X][Y];
+        A[0][2] = A[1][0] * A[2][1] - A[2][0] * A[1][1];
+        A[1][2] = A[2][0] * A[0][1] - A[0][0] * A[2][1];
+        A[2][2] = A[0][0] * A[1][1] - A[1][0] * A[0][1];
 
         return;
     }
