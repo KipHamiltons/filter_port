@@ -48,18 +48,18 @@
 #define DEFAULTB 50.0F  // default geomagnetic field (uT)
 
 // useful multiplicative conversion constants
-static constexpr double PI 3.141592654;               // Pi
-static constexpr double FDEGTORAD 0.01745329251994;   // degrees to radians conversion = pi / 180
-static constexpr double FRADTODEG 57.2957795130823;   // radians to degrees conversion = 180 / pi
-static constexpr double FRECIP180 0.0055555555555;    // multiplicative factor 1/180
-static constexpr double ONETHIRD 0.33333333;          // one third
-static constexpr double ONESIXTH 0.166666667;         // one sixth
-static constexpr double ONETWELFTH 0.0833333333;      // one twelfth
-static constexpr double ONEOVER48 0.02083333333;      // 1 / 48
-static constexpr double ONEOVER120 0.0083333333;      // 1 / 120
-static constexpr double ONEOVER3840 0.0002604166667;  // 1 / 3840
-static constexpr double ONEOVERROOT2 0.707106781;     // 1/sqrt(2)
-static constexpr double ROOT3OVER2 0.866025403784;    // sqrt(3)/2
+static constexpr double PI           = 3.141592654;       // Pi
+static constexpr double FDEGTORAD    = 0.01745329251994;  // degrees to radians conversion = pi / 180
+static constexpr double FRADTODEG    = 57.2957795130823;  // radians to degrees conversion = 180 / pi
+static constexpr double FRECIP180    = 0.0055555555555;   // multiplicative factor 1/180
+static constexpr double ONETHIRD     = 0.33333333;        // one third
+static constexpr double ONESIXTH     = 0.166666667;       // one sixth
+static constexpr double ONETWELFTH   = 0.0833333333;      // one twelfth
+static constexpr double ONEOVER48    = 0.02083333333;     // 1 / 48
+static constexpr double ONEOVER120   = 0.0083333333;      // 1 / 120
+static constexpr double ONEOVER3840  = 0.0002604166667;   // 1 / 3840
+static constexpr double ONEOVERROOT2 = 0.707106781;       // 1/sqrt(2)
+static constexpr double ROOT3OVER2   = 0.866025403784;    // sqrt(3)/2
 
 // the quaternion type to be transmitted
 using quaternion_type = enum quaternion { Q3, Q3M, Q3G, Q6MA, Q6AG, Q9 };
