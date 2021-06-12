@@ -56,7 +56,7 @@ namespace filter::kalman {
 
 
     // function initalizes the 6DOF accel + gyro Kalman filter algorithm
-    void fInit_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN& pthisSV, int iSensorFS, int iOverSampleRatio) {
+    void fInit_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN& pthisSV) {
         int i = 0;
         int j = 0;  // loop counters
 
@@ -109,13 +109,14 @@ namespace filter::kalman {
     }  // end fInit_6DOF_GY_KALMAN
 
     // 6DOF accel + gyro Kalman filter algorithm
-    void fRun_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN& pthisSV,
-                             //  struct AccelSensor* pthisAccel,
-                             double accel_reading[3],
-                             //  struct GyroSensor* pthisGyro,
-                             double gyro_reading[3],
-                             int ithisCoordSystem,
-                             int /*iOverSampleRatio*/) {
+    Eigen::Quaternion<double> fRun_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN& pthisSV,
+                                                  const Eigen::Matrix<double, 3, 1>& accel_reading,
+                                                  const Eigen::Matrix<double, 3, 1>& gyro_reading,
+                                                  const int& ithisCoordSystem,
+                                                  const bool& resetflag) {
+        double accel_reading_arr[3] = {accel_reading.x(), accel_reading.y(), accel_reading.z()};
+        double gyro_reading_arr[3]  = {gyro_reading.x(), gyro_reading.y(), gyro_reading.z()};
+
         // local arrays and scalars
         double rvec[3];         // rotation vector
         double ftmpA9x3[9][3];  // scratch array
@@ -145,9 +146,9 @@ namespace filter::kalman {
         int iPivot[3];
 
         // do a reset and return if requested
-        if (pthisSV.resetflag != 0) {
-            fInit_6DOF_GY_KALMAN(pthisSV, SENSORFS, OVERSAMPLE_RATIO);
-            return;
+        if (resetflag) {
+            fInit_6DOF_GY_KALMAN(pthisSV);
+            return fRun_6DOF_GY_KALMAN(pthisSV, accel_reading, gyro_reading, ithisCoordSystem, false);
         }
 
         // do a once-only orientation lock to accelerometer tilt
@@ -156,17 +157,17 @@ namespace filter::kalman {
             if (ithisCoordSystem == NED) {
                 // call NED tilt function
                 // f3DOFTiltNED(pthisSV.posterior_rot_matrix, pthisAccel.fGpFast);
-                f3DOFTiltNED(pthisSV.posterior_rot_matrix, accel_reading);
+                f3DOFTiltNED(pthisSV.posterior_rot_matrix, accel_reading_arr);
             }
             else if (ithisCoordSystem == ANDROID) {
                 // call Android tilt function
                 // f3DOFTiltAndroid(pthisSV.posterior_rot_matrix, pthisAccel.fGpFast);
-                f3DOFTiltAndroid(pthisSV.posterior_rot_matrix, accel_reading);
+                f3DOFTiltAndroid(pthisSV.posterior_rot_matrix, accel_reading_arr);
             }
             else {
                 // call Windows 8 tilt function
                 // f3DOFTiltWin8(pthisSV.posterior_rot_matrix, pthisAccel.fGpFast);
-                f3DOFTiltWin8(pthisSV.posterior_rot_matrix, accel_reading);
+                f3DOFTiltWin8(pthisSV.posterior_rot_matrix, accel_reading_arr);
             }
 
             // get the orientation quaternion from the orientation matrix
@@ -186,32 +187,11 @@ namespace filter::kalman {
         // only computed for transmission over bluetooth and not used for orientation determination.
         for (i = 0; i <= 2; i++) {
             // pthisSV.angular_velocity_vec[i] = pthisGyro.fYp[i] - pthisSV.gyro_offset[i];
-            pthisSV.angular_velocity_vec[i] = gyro_reading[i] - pthisSV.gyro_offset[i];
+            pthisSV.angular_velocity_vec[i] = gyro_reading_arr[i] - pthisSV.gyro_offset[i];
         }
 
         // initialize the a priori orientation quaternion to the a posteriori orientation estimate
         pthisSV.prior_rotation_quat = pthisSV.posterior_orientation_quat;
-
-        // TODO: review this
-        // We're ignoring this next block for now, because we're using DECIMATION_FACTOR=1
-
-        // integrate the buffered high frequency (typically 200Hz) gyro readings
-        // for (j = 0; j < iOverSampleRatio; j++) {
-        //     // compute the incremental fast (typically 200Hz) rotation vector rvec (deg)
-        //     for (i = 0; i <= 2; i++) {
-        //         rvec[i] = (((double) pthisGyro.iYpFast[j][i] * pthisGyro.fDegPerSecPerCount) -
-        //         pthisSV.gyro_offset[i])
-        //                   * pthisSV.ONE_OVER_SENSORFS;
-        //     }
-
-        //     // compute the incremental quaternion delta_quaternion from the rotation vector
-        //     fQuaternionFromRotationVectorDeg(&(pthisSV.delta_quaternion), rvec, 1.0F);
-
-        //     // incrementally rotate the a priori orientation quaternion prior_rotation_quat
-        //     // the a posteriori orientation is re-normalized later so this update is stable
-        //     qAeqAxB(&(pthisSV.prior_rotation_quat), &(pthisSV.delta_quaternion));
-        // }
-
         // get the a priori rotation matrix from the a priori quaternion
         fRotationMatrixFromQuaternion(pthisSV.prior_rotation_matrix, pthisSV.prior_rotation_quat);
 
@@ -241,14 +221,14 @@ namespace filter::kalman {
                 // pthisSV.gravity_accel_minus_gravity_gyro[i] = pthisAccel.fGpFast[i] + pthisSV.linear_accel_g2[i] -
                 // pthisSV.gyro_gravity_g[i];
                 pthisSV.gravity_accel_minus_gravity_gyro[i] =
-                    accel_reading[i] + pthisSV.linear_accel_g2[i] - pthisSV.gyro_gravity_g[i];
+                    accel_reading_arr[i] + pthisSV.linear_accel_g2[i] - pthisSV.gyro_gravity_g[i];
             }
             else {
                 // Android has negative sign for gravity: y = a - g, g = -y + a
                 // pthisSV.gravity_accel_minus_gravity_gyro[i] = -pthisAccel.fGpFast[i] + pthisSV.linear_accel_g2[i]
                 // - pthisSV.gyro_gravity_g[i];
                 pthisSV.gravity_accel_minus_gravity_gyro[i] =
-                    -accel_reading[i] + pthisSV.linear_accel_g2[i] - pthisSV.gyro_gravity_g[i];
+                    -accel_reading_arr[i] + pthisSV.linear_accel_g2[i] - pthisSV.gyro_gravity_g[i];
             }
         }
 
@@ -630,6 +610,6 @@ namespace filter::kalman {
             // Qw[a-a-] = Qw[6-8][6-8] = E[a-(a-)^T] = ca^2 * Q[a+a+] + Qwa * I
             pthisSV.Qw[i + 6][i + 6] = pthisSV.FCA_squared * pthisSV.P_plus[i + 6][i + 6] + FQWA_6DOF_GY_KALMAN;
         }
-
+        return pthisSV.posterior_orientation_quat;
     }  // end fRun_6DOF_GY_KALMAN
 }  // namespace filter::kalman
