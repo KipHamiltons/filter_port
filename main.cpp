@@ -64,19 +64,15 @@ int main() {
     std::vector<Eigen::Quaternion<double>> orientations{};
 
     for (int t = 0; t < int(quaternions.size()); ++t) {
-        auto acc_reading  = acc_readings[t];
-        auto gyro_reading = gyro_readings[t];
+        Eigen::Matrix<double, 3, 1> acc_reading  = acc_readings[t];
+        Eigen::Matrix<double, 3, 1> gyro_reading = gyro_readings[t];
         // The data is expected to be in deg,
         // but converting it doesn't change the result??
         // gyro_reading[0]   = gyro_reading[0] * M_PI / 180.0f;
         // gyro_reading[1]   = gyro_reading[1] * M_PI / 180.0f;
         // gyro_reading[2]   = gyro_reading[2] * M_PI / 180.0f;
 
-        filter::kalman::fRun_6DOF_GY_KALMAN(filter,
-                                            acc_reading.data(),
-                                            gyro_reading.data(),
-                                            COORDINATE_SYSTEM,
-                                            DECIMATION_FACTOR);
+        filter::kalman::fRun_6DOF_GY_KALMAN(filter, acc_reading, gyro_reading, COORDINATE_SYSTEM, DECIMATION_FACTOR);
         orientations.emplace_back(filter.posterior_orientation_quat);
     }
 

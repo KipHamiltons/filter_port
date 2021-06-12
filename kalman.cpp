@@ -48,11 +48,9 @@ namespace filter::kalman {
     using filter::orientation::fqAeqNormqA;
     using filter::orientation::fQuaternionFromRotationMatrix;
     using filter::orientation::fQuaternionFromRotationVectorDeg;
-    using filter::orientation::fRotationMatrixFromQuaternion;
     using filter::orientation::fRotationVectorDegFromQuaternion;
     using filter::orientation::fWin8AnglesDegFromRotationMatrix;
     using filter::orientation::qAeqBxC;
-
 
     // function initalizes the 6DOF accel + gyro Kalman filter algorithm
     void fInit_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN& pthisSV, int iSensorFS, int iOverSampleRatio) {
@@ -65,17 +63,17 @@ namespace filter::kalman {
         // initialize the fixed entries in the measurement matrix C
         for (i = 0; i < 3; i++) {
             for (j = 0; j < 9; j++) {
-                pthisSV.C[i][j] = 0.0F;
+                pthisSV.C(i, j) = 0.0;
             }
         }
-        pthisSV.C[0][6] = pthisSV.C[1][7] = pthisSV.C[2][8] = 1.0F;
+        pthisSV.C(0, 6) = pthisSV.C(1, 7) = pthisSV.C(2, 8) = 1.0;
 
         // zero a posteriori orientation, error vector xe+ (thetae+, be+, ae+) and b+
         f3x3matrixAeqI(pthisSV.posterior_rot_matrix);
         fqAeq1(pthisSV.posterior_orientation_quat);
         for (i = 0; i <= 2; i++) {
             pthisSV.orientation_error_deg[i] = pthisSV.gyro_offset_error[i] = pthisSV.linear_accel_error_g1[i] =
-                pthisSV.gyro_offset[i]                                      = 0.0F;
+                pthisSV.gyro_offset[i]                                      = 0.0;
         }
 
         // initialize noise variance for Qv and Qw matrix updates
@@ -88,19 +86,19 @@ namespace filter::kalman {
         // zero the matrix Qw
         for (i = 0; i < 9; i++) {
             for (j = 0; j < 9; j++) {
-                pthisSV.Qw[i][j] = 0.0F;
+                pthisSV.Qw(i, j) = 0.0;
             }
         }
         // loop over non-zero values
         for (i = 0; i < 3; i++) {
             // theta_e * theta_e terms
-            pthisSV.Qw[i][i] = FQWINITTHTH_6DOF_GY_KALMAN;
+            pthisSV.Qw(i, i) = FQWINITTHTH_6DOF_GY_KALMAN;
             // b_e * b_e terms
-            pthisSV.Qw[i + 3][i + 3] = FQWINITBB_6DOF_GY_KALMAN;
+            pthisSV.Qw(i + 3, i + 3) = FQWINITBB_6DOF_GY_KALMAN;
             // th_e * b_e terms
-            pthisSV.Qw[i][i + 3] = pthisSV.Qw[i + 3][i] = FQWINITTHB_6DOF_GY_KALMAN;
+            pthisSV.Qw(i, i + 3) = pthisSV.Qw(i + 3, i) = FQWINITTHB_6DOF_GY_KALMAN;
             // a_e * a_e terms
-            pthisSV.Qw[i + 6][i + 6] = FQWINITAA_6DOF_GY_KALMAN;
+            pthisSV.Qw(i + 6, i + 6) = FQWINITAA_6DOF_GY_KALMAN;
         }
 
         // clear the reset flag
@@ -110,38 +108,17 @@ namespace filter::kalman {
     // 6DOF accel + gyro Kalman filter algorithm
     void fRun_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN& pthisSV,
                              //  struct AccelSensor* pthisAccel,
-                             double accel_reading[3],
+                             Eigen::Matrix<double, 3, 1>& accel_reading,
                              //  struct GyroSensor* pthisGyro,
-                             double gyro_reading[3],
+                             Eigen::Matrix<double, 3, 1>& gyro_reading,
                              int ithisCoordSystem,
                              int /*iOverSampleRatio*/) {
         // local arrays and scalars
-        double rvec[3];         // rotation vector
-        double ftmpA9x3[9][3];  // scratch array
-
-        // assorted array pointers
-        double* pP_pluskj   = nullptr;
-        double* pP_plusij   = nullptr;
-        double* pKij        = nullptr;
-        double* pKik        = nullptr;
-        double* pftmpA9x3ik = nullptr;
-        double* pftmpA9x3ij = nullptr;
-        double* pftmpA9x3kj = nullptr;
-        double* pQwij       = nullptr;
-        double* pQwik       = nullptr;
-        double* pQwkj       = nullptr;
-        double* pCik        = nullptr;
-        double* pCjk        = nullptr;
+        double rvec[3];  // rotation vector
 
         int i = 0;
         int j = 0;
         int k = 0;  // loop counters
-
-        // working arrays for 3x3 matrix inversion
-        double* pfRows[3];
-        int iColInd[3];
-        int iRowInd[3];
-        int iPivot[3];
 
         // do a reset and return if requested
         if (pthisSV.resetflag != 0) {
@@ -191,28 +168,8 @@ namespace filter::kalman {
         // initialize the a priori orientation quaternion to the a posteriori orientation estimate
         pthisSV.prior_rotation_quat = pthisSV.posterior_orientation_quat;
 
-        // TODO: review this
-        // We're ignoring this next block for now, because we're using DECIMATION_FACTOR=1
-
-        // integrate the buffered high frequency (typically 200Hz) gyro readings
-        // for (j = 0; j < iOverSampleRatio; j++) {
-        //     // compute the incremental fast (typically 200Hz) rotation vector rvec (deg)
-        //     for (i = 0; i <= 2; i++) {
-        //         rvec[i] = (((double) pthisGyro.iYpFast[j][i] * pthisGyro.fDegPerSecPerCount) -
-        //         pthisSV.gyro_offset[i])
-        //                   * pthisSV.ONE_OVER_SENSORFS;
-        //     }
-
-        //     // compute the incremental quaternion delta_quaternion from the rotation vector
-        //     fQuaternionFromRotationVectorDeg(&(pthisSV.delta_quaternion), rvec, 1.0F);
-
-        //     // incrementally rotate the a priori orientation quaternion prior_rotation_quat
-        //     // the a posteriori orientation is re-normalized later so this update is stable
-        //     qAeqAxB(&(pthisSV.prior_rotation_quat), &(pthisSV.delta_quaternion));
-        // }
-
         // get the a priori rotation matrix from the a priori quaternion
-        fRotationMatrixFromQuaternion(pthisSV.prior_rotation_matrix, pthisSV.prior_rotation_quat);
+        pthisSV.prior_rotation_matrix = pthisSV.prior_rotation_quat.toRotationMatrix();
 
         // *********************************************************************************
         // calculate a priori gyro and accelerometer estimates of the gravity vector
@@ -224,11 +181,11 @@ namespace filter::kalman {
         for (i = 0; i <= 2; i++) {
             if (ithisCoordSystem == NED) {
                 // NED gravity is along positive z axis
-                pthisSV.gyro_gravity_g[i] = pthisSV.prior_rotation_matrix[i][2];
+                pthisSV.gyro_gravity_g[i] = pthisSV.prior_rotation_matrix(i, 2);
             }
             else {
                 // Android and Win8 gravity are along negative z axis
-                pthisSV.gyro_gravity_g[i] = -pthisSV.prior_rotation_matrix[i][2];
+                pthisSV.gyro_gravity_g[i] = -pthisSV.prior_rotation_matrix(i, 2);
             }
 
             // compute a priori acceleration (a-) (g, sensor frame) from a posteriori estimate (g, sensor frame)
@@ -256,18 +213,18 @@ namespace filter::kalman {
         // *********************************************************************************
 
         // update measurement matrix C (3x9) with -alpha(g-)x from gyro (g, sensor frame)
-        pthisSV.C[0][1] = FDEGTORAD * pthisSV.gyro_gravity_g[2];
-        pthisSV.C[0][2] = -FDEGTORAD * pthisSV.gyro_gravity_g[1];
-        pthisSV.C[1][2] = FDEGTORAD * pthisSV.gyro_gravity_g[0];
-        pthisSV.C[1][0] = -pthisSV.C[0][1];
-        pthisSV.C[2][0] = -pthisSV.C[0][2];
-        pthisSV.C[2][1] = -pthisSV.C[1][2];
-        pthisSV.C[0][4] = -pthisSV.DELTA_T * pthisSV.C[0][1];
-        pthisSV.C[0][5] = -pthisSV.DELTA_T * pthisSV.C[0][2];
-        pthisSV.C[1][5] = -pthisSV.DELTA_T * pthisSV.C[1][2];
-        pthisSV.C[1][3] = -pthisSV.C[0][4];
-        pthisSV.C[2][3] = -pthisSV.C[0][5];
-        pthisSV.C[2][4] = -pthisSV.C[1][5];
+        pthisSV.C(0, 1) = FDEGTORAD * pthisSV.gyro_gravity_g[2];
+        pthisSV.C(0, 2) = -FDEGTORAD * pthisSV.gyro_gravity_g[1];
+        pthisSV.C(1, 2) = FDEGTORAD * pthisSV.gyro_gravity_g[0];
+        pthisSV.C(1, 0) = -pthisSV.C(0, 1);
+        pthisSV.C(2, 0) = -pthisSV.C(0, 2);
+        pthisSV.C(2, 1) = -pthisSV.C(1, 2);
+        pthisSV.C(0, 4) = -pthisSV.DELTA_T * pthisSV.C(0, 1);
+        pthisSV.C(0, 5) = -pthisSV.DELTA_T * pthisSV.C(0, 2);
+        pthisSV.C(1, 5) = -pthisSV.DELTA_T * pthisSV.C(1, 2);
+        pthisSV.C(1, 3) = -pthisSV.C(0, 4);
+        pthisSV.C(2, 3) = -pthisSV.C(0, 5);
+        pthisSV.C(2, 4) = -pthisSV.C(1, 5);
 
         // *********************************************************************************
         // calculate the Kalman gain matrix K (9x3)
@@ -275,150 +232,9 @@ namespace filter::kalman {
         // Qw is used as a proxy for P- throughout the code
         // P+ is used here as a working array to reduce RAM usage and is re-computed later
         // *********************************************************************************
-
-        // set ftmpA9x3 = P- * C^T = Qw * C^T where Qw and C are both sparse
-        // C also has a significant number of +1 and -1 entries
-        // ftmpA9x3 is also sparse but not symmetric
-        for (i = 0; i < 9; i++)  // loop over rows of ftmpA9x3
-        {
-            // initialize pftmpA9x3ij for current i, j=0
-            pftmpA9x3ij = ftmpA9x3[i];
-
-            for (j = 0; j < 3; j++)  // loop over columns of ftmpA9x3
-            {
-                // zero ftmpA9x3[i][j]
-                *pftmpA9x3ij = 0.0F;
-
-                // initialize pCjk for current j, k=0
-                pCjk = pthisSV.C[j];
-
-                // initialize pQwik for current i, k=0
-                pQwik = pthisSV.Qw[i];
-
-                // sum matrix products over inner loop over k
-                for (k = 0; k < 9; k++) {
-                    if ((*pQwik != 0.0F) && (*pCjk != 0.0F)) {
-                        if (*pCjk == 1.0F) {
-                            *pftmpA9x3ij += *pQwik;
-                        }
-                        else if (*pCjk == -1.0F) {
-                            *pftmpA9x3ij -= *pQwik;
-                        }
-                        else {
-                            *pftmpA9x3ij += *pQwik * *pCjk;
-                        }
-                    }
-
-                    // increment pCjk and pQwik for next iteration of k
-                    pCjk++;
-                    pQwik++;
-
-                }  // end of loop over k
-
-                // increment pftmpA9x3ij for next iteration of j
-                pftmpA9x3ij++;
-
-            }  // end of loop over j
-        }      // end of loop over i
-
-        // set symmetric P+ (3x3 scratch sub-matrix) to C * P- * C^T + Qv
-        // = C * (Qw * C^T) + Qv = C * ftmpA9x3 + Qv
-        // both C and ftmpA9x3 are sparse but not symmetric
-        for (i = 0; i < 3; i++)  // loop over rows of P+
-        {
-            // initialize pP_plusij for current i, j=i
-            pP_plusij = pthisSV.P_plus[i] + i;
-
-            for (j = i; j < 3; j++)  // loop over above diagonal columns of P+
-            {
-                // zero P+[i][j]
-                *pP_plusij = 0.0F;
-
-                // initialize pCik for current i, k=0
-                pCik = pthisSV.C[i];
-
-                // initialize pftmpA9x3kj for current j, k=0
-                pftmpA9x3kj = *ftmpA9x3 + j;
-
-                // sum matrix products over inner loop over k
-                for (k = 0; k < 9; k++) {
-                    if ((*pCik != 0.0F) && (*pftmpA9x3kj != 0.0F)) {
-                        if (*pCik == 1.0F) {
-                            *pP_plusij += *pftmpA9x3kj;
-                        }
-                        else if (*pCik == -1.0F) {
-                            *pP_plusij -= *pftmpA9x3kj;
-                        }
-                        else {
-                            *pP_plusij += *pCik * *pftmpA9x3kj;
-                        }
-                    }
-
-                    // update pCik and pftmpA9x3kj for next iteration of k
-                    pCik++;
-                    pftmpA9x3kj += 3;
-
-                }  // end of loop over k
-
-                // increment pP_plusij for next iteration of j
-                pP_plusij++;
-
-            }  // end of loop over j
-        }      // end of loop over i
-
-        // add in noise covariance terms to the diagonal
-        pthisSV.P_plus[0][0] += pthisSV.accel_term_from_Qv;
-        pthisSV.P_plus[1][1] += pthisSV.accel_term_from_Qv;
-        pthisSV.P_plus[2][2] += pthisSV.accel_term_from_Qv;
-
-        // copy above diagonal terms of P+ (3x3 scratch sub-matrix) to below diagonal terms
-        pthisSV.P_plus[1][0] = pthisSV.P_plus[0][1];
-        pthisSV.P_plus[2][0] = pthisSV.P_plus[0][2];
-        pthisSV.P_plus[2][1] = pthisSV.P_plus[1][2];
-
-        // calculate inverse of P+ (3x3 scratch sub-matrix) = inv(C * P- * C^T + Qv) = inv(C * Qw * C^T + Qv)
-        for (i = 0; i < 3; i++) {
-            pfRows[i] = pthisSV.P_plus[i];
-        }
-        pfRows = pfRows.inverse();
-
-        // set K = P- * C^T * inv(C * P- * C^T + Qv) = Qw * C^T * inv(C * Qw * C^T + Qv)
-        // = ftmpA9x3 * P+ (3x3 sub-matrix)
-        // ftmpA9x3 = Qw * C^T is sparse but P+ (3x3 sub-matrix) is not
-        // K is not symmetric because C is not symmetric
-        for (i = 0; i < 9; i++)  // loop over rows of K9x3
-        {
-            // initialize pKij for i, j=0
-            pKij = pthisSV.K[i];
-
-            for (j = 0; j < 3; j++)  // loop over columns of K9x3
-            {
-                // zero the matrix element K[i][j]
-                *pKij = 0.0F;
-
-                // initialize pftmpA9x3ik for i, k=0
-                pftmpA9x3ik = ftmpA9x3[i];
-
-                // initialize pP_pluskj for j, k=0
-                pP_pluskj = *pthisSV.P_plus + j;
-
-                // sum matrix products over inner loop over k
-                for (k = 0; k < 3; k++) {
-                    if (*pftmpA9x3ik != 0.0F) {
-                        *pKij += *pftmpA9x3ik * *pP_pluskj;
-                    }
-
-                    // increment pftmpA9x3ik and pP_pluskj for next iteration of k
-                    pftmpA9x3ik++;
-                    pP_pluskj += 9;
-
-                }  // end of loop over k
-
-                // increment pKij for the next iteration of j
-                pKij++;
-
-            }  // end of loop over j
-        }      // end of loop over i
+        Eigen::Matrix<double, 3, 3> Qv = pthisSV.accel_term_from_Qv * Eigen::Matrix<double, 3, 3>::Identity();
+        pthisSV.K =
+            pthisSV.Qw * pthisSV.C.transpose() * (pthisSV.C * pthisSV.Qw * pthisSV.C.transpose() + Qv).inverse();
 
         // *********************************************************************************
         // calculate a posteriori error estimate: xe+ = K * ze-
@@ -427,13 +243,13 @@ namespace filter::kalman {
         // update the a posteriori state vector
         for (i = 0; i <= 2; i++) {
             // zero a posteriori error terms
-            pthisSV.orientation_error_deg[i] = pthisSV.gyro_offset_error[i] = pthisSV.linear_accel_error_g1[i] = 0.0F;
+            pthisSV.orientation_error_deg[i] = pthisSV.gyro_offset_error[i] = pthisSV.linear_accel_error_g1[i] = 0.0;
 
             // accumulate the error vector terms K * ze-
             for (k = 0; k < 3; k++) {
-                pthisSV.orientation_error_deg[i] += pthisSV.K[i][k] * pthisSV.gravity_accel_minus_gravity_gyro[k];
-                pthisSV.gyro_offset_error[i] += pthisSV.K[i + 3][k] * pthisSV.gravity_accel_minus_gravity_gyro[k];
-                pthisSV.linear_accel_error_g1[i] += pthisSV.K[i + 6][k] * pthisSV.gravity_accel_minus_gravity_gyro[k];
+                pthisSV.orientation_error_deg[i] += pthisSV.K(i, k) * pthisSV.gravity_accel_minus_gravity_gyro[k];
+                pthisSV.gyro_offset_error[i] += pthisSV.K(i + 3, k) * pthisSV.gravity_accel_minus_gravity_gyro[k];
+                pthisSV.linear_accel_error_g1[i] += pthisSV.K(i + 6, k) * pthisSV.gravity_accel_minus_gravity_gyro[k];
             }
         }
 
@@ -453,7 +269,7 @@ namespace filter::kalman {
         fqAeqNormqA(pthisSV.posterior_orientation_quat);
 
         // compute the a posteriori rotation matrix from the a posteriori quaternion
-        fRotationMatrixFromQuaternion(pthisSV.posterior_rot_matrix, pthisSV.posterior_orientation_quat);
+        pthisSV.posterior_rot_matrix = pthisSV.posterior_orientation_quat.toRotationMatrix();
 
         // compute the rotation vector from the a posteriori quaternion
         fRotationVectorDegFromQuaternion(pthisSV.posterior_orientation_quat, pthisSV.rot_vec);
@@ -504,130 +320,29 @@ namespace filter::kalman {
         // both Qw and P+ are used as working arrays in this section
         // at the end of this section, P+ is valid but Qw is over-written
         // ***********************************************************************************
-
-        // set P+ (3x9 scratch sub-matrix) to the product C (3x9) * Qw (9x9)
-        // where both C and Qw are sparse and C has a significant number of +1 entries
-        // the resulting matrix is sparse but not symmetric
-        for (i = 0; i < 3; i++)  // loop over the rows of P+
-        {
-            // initialize pP_plusij for current i, j=0
-            pP_plusij = pthisSV.P_plus[i];
-
-            for (j = 0; j < 9; j++)  // loop over the columns of P+
-            {
-                // zero P+[i][j]
-                *pP_plusij = 0.0F;
-
-                // initialize pCik for current i, k=0
-                pCik = pthisSV.C[i];
-
-                // initialize pQwkj for current j, k=0
-                pQwkj = &pthisSV.Qw[0][j];
-
-                // sum matrix products over inner loop over k
-                for (k = 0; k < 9; k++) {
-                    if ((*pCik != 0.0F) && (*pQwkj != 0.0F)) {
-                        if (*pCik == 1.0F) {
-                            *pP_plusij += *pQwkj;
-                        }
-                        else if (*pCik == -1.0F) {
-                            *pP_plusij -= *pQwkj;
-                        }
-                        else {
-                            *pP_plusij += *pCik * *pQwkj;
-                        }
-                    }
-
-                    // update pCik and pQwkj for next iteration of k
-                    pCik++;
-                    pQwkj += 9;
-
-                }  // end of loop over k
-
-                // increment pP_plusij for next iteration of j
-                pP_plusij++;
-
-            }  // end of loop over j
-        }      // end of loop over i
-
-        // compute P+ = (I9 - K * C) * Qw = Qw - K * (C * Qw) = Qw - K * P+ (3x9 sub-matrix)
-        // storing result P+ in Qw and over-writing Qw which is OK since Qw is later computed from P+
-        // where working array P+ (6x12 sub-matrix) is sparse but K is not sparse
-        // only on and above diagonal terms of P+ are computed since P+ is symmetric
-        for (i = 0; i < 9; i++) {
-            // initialize pQwij for i, j=i
-            pQwij = pthisSV.Qw[i] + i;
-
-            for (j = i; j < 9; j++) {
-                // initialize pKik for i, k=0
-                pKik = pthisSV.K[i];
-
-                // initialize pP_pluskj for j, k=0
-                pP_pluskj = *pthisSV.P_plus + j;
-
-                // compute on and above diagonal matrix entry
-                for (k = 0; k < 3; k++) {
-                    // check for non-zero values since P+ (3x9 scratch sub-matrix) is sparse
-                    if (*pP_pluskj != 0.0F) {
-                        *pQwij -= *pKik * *pP_pluskj;
-                    }
-
-                    // increment pKik and pP_pluskj for next iteration of k
-                    pKik++;
-                    pP_pluskj += 9;
-
-                }  // end of loop over k
-
-                // increment pQwij for next iteration of j
-                pQwij++;
-
-            }  // end of loop over j
-        }      // end of loop over i
-
-        // Qw now holds the on and above diagonal elements of P+ (9x9)
-        // so perform a simple copy to the all elements of P+
-        // after execution of this code P+ is valid but Qw remains invalid
-        for (i = 0; i < 9; i++) {
-            // initialize pP_plusij and pQwij for i, j=i
-            pP_plusij = pthisSV.P_plus[i] + i;
-            pQwij     = pthisSV.Qw[i] + i;
-
-            // copy the on-diagonal elements and increment pointers to enter loop at j=i+1
-            *(pP_plusij++) = *(pQwij++);
-
-            // loop over above diagonal columns j copying to below-diagonal elements
-            for (j = i + 1; j < 9; j++) {
-                *(pP_plusij++) = pthisSV.P_plus[j][i] = *(pQwij++);
-            }
-        }
+        pthisSV.P_plus = pthisSV.Qw - pthisSV.K * pthisSV.C * pthisSV.Qw;
 
         // *********************************************************************************
         // re-create the noise covariance matrix Qw=fn(P+) for the next iteration
         // using the elements of P+ which are now valid
         // Qw was over-written earlier but is here recomputed (all elements)
         // *********************************************************************************
-
-        // zero the matrix Qw (9x9)
-        for (i = 0; i < 9; i++) {
-            for (j = 0; j < 9; j++) {
-                pthisSV.Qw[i][j] = 0.0F;
-            }
-        }
+        pthisSV.Qw = Eigen::Matrix<double, 9, 9>::Zero();
 
         // update the covariance matrix components
         for (i = 0; i < 3; i++) {
-            // Qw[th-th-] = Qw[0-2][0-2] = E[th-(th-)^T] = Q[th+th+] + deltat^2 * (Q[b+b+] + (Qwb + QvG) * I)
-            pthisSV.Qw[i][i] = pthisSV.P_plus[i][i]
-                               + pthisSV.DELTA_T_SQUARED * (pthisSV.P_plus[i + 3][i + 3] + pthisSV.FQWB_plus_FQVG);
+            // Qw[th-th-] = Qw[0(2,0)2] = E[th-(th-)^T] = Q[th+th+] + deltat^2 * (Q[b+b+] + (Qwb + QvG) * I)
+            pthisSV.Qw(i, i) = pthisSV.P_plus(i, i)
+                               + pthisSV.DELTA_T_SQUARED * (pthisSV.P_plus(i + 3, i + 3) + pthisSV.FQWB_plus_FQVG);
 
-            // Qw[b-b-] = Qw[3-5][3-5] = E[b-(b-)^T] = Q[b+b+] + Qwb * I
-            pthisSV.Qw[i + 3][i + 3] = pthisSV.P_plus[i + 3][i + 3] + FQWB_6DOF_GY_KALMAN;
+            // Qw[b-b-] = Qw[3(5,3)5] = E[b-(b-)^T] = Q[b+b+] + Qwb * I
+            pthisSV.Qw(i + 3, i + 3) = pthisSV.P_plus(i + 3, i + 3) + FQWB_6DOF_GY_KALMAN;
 
-            // Qw[th-b-] = Qw[0-2][3-5] = E[th-(b-)^T] = -deltat * (Q[b+b+] + Qwb * I) = -deltat * Qw[b-b-]
-            pthisSV.Qw[i][i + 3] = pthisSV.Qw[i + 3][i] = -pthisSV.DELTA_T * pthisSV.Qw[i + 3][i + 3];
+            // Qw[th-b-] = Qw[0(2,3)5] = E[th-(b-)^T] = -deltat * (Q[b+b+] + Qwb * I) = -deltat * Qw[b-b-]
+            pthisSV.Qw(i, i + 3) = pthisSV.Qw(i + 3, i) = -pthisSV.DELTA_T * pthisSV.Qw(i + 3, i + 3);
 
-            // Qw[a-a-] = Qw[6-8][6-8] = E[a-(a-)^T] = ca^2 * Q[a+a+] + Qwa * I
-            pthisSV.Qw[i + 6][i + 6] = pthisSV.FCA_squared * pthisSV.P_plus[i + 6][i + 6] + FQWA_6DOF_GY_KALMAN;
+            // Qw[a-a-] = Qw[6(8,6)8] = E[a-(a-)^T] = ca^2 * Q[a+a+] + Qwa * I
+            pthisSV.Qw(i + 6, i + 6) = pthisSV.FCA_squared * pthisSV.P_plus(i + 6, i + 6) + FQWA_6DOF_GY_KALMAN;
         }
 
     }  // end fRun_6DOF_GY_KALMAN
