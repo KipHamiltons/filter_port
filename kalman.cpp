@@ -63,10 +63,6 @@ namespace filter::kalman {
         // reset the flag denoting that a first 6DOpthisSVtion lock has been achieved
         pthisSV->iFirstOrientationLock = false;
 
-        // compute and store useful product terms to save doubleing point calculations later
-        pthisSV->FCA_squared    = FCA_6DOF_GY_KALMAN * FCA_6DOF_GY_KALMAN;
-        pthisSV->FQWB_plus_FQVG = FQWB_6DOF_GY_KALMAN + FQVG_6DOF_GY_KALMAN;
-
         // initialize the fixed entries in the measurement matrix C
         for (i = 0; i < 3; i++) {
             for (j = 0; j < 9; j++) {

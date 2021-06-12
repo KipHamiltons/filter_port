@@ -65,11 +65,10 @@ namespace filter::tasks {
         double K[9][3];                              // kalman filter gain matrix K
         double Qw[9][9];                             // covariance matrix Qw
         double C[3][9];                              // measurement matrix C
-        double FCA_squared;                          // FCA * FCA;
-        static constexpr double DELTA_T = OVERSAMPLE_RATIO / SENSORFS;  // kalman filter sampling interval (s) =
-                                                                        // OVERSAMPLE_RATIO / SENSORFS
-        static constexpr double DELTA_T_SQUARED = DELTA_T * DELTA_T;    // DELTA_T * DELTA_T;
-        double FQWB_plus_FQVG;                                          // FQWB + FQVG;
+        static constexpr double FCA_squared     = FCA_6DOF_GY_KALMAN * FCA_6DOF_GY_KALMAN;  // FCA * FCA;
+        static constexpr double DELTA_T         = OVERSAMPLE_RATIO / SENSORFS;  // kalman filter sampling interval (s)
+        static constexpr double DELTA_T_SQUARED = DELTA_T * DELTA_T;
+        static constexpr double FQWB_plus_FQVG  = FQWB_6DOF_GY_KALMAN + FQVG_6DOF_GY_KALMAN;
         bool iFirstOrientationLock;  // denotes that 6DOF orientation has locked to 3DOF
         bool resetflag;              // flag to request re-initialization on next pass
     };
