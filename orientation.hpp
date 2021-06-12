@@ -57,19 +57,19 @@ namespace filter::orientation {
                                           double& pfPsiDeg,
                                           double& pfRhoDeg,
                                           double& pfChiDeg);
-    void fQuaternionFromRotationMatrix(double R[][3], struct fquaternion& pq);
-    void fRotationMatrixFromQuaternion(double R[][3], struct fquaternion& pq);
+    void fQuaternionFromRotationMatrix(double R[][3], Eigen::Quaternion<double>& pq);
+    void fRotationMatrixFromQuaternion(double R[][3], Eigen::Quaternion<double>& pq);
     void fLPFScalar(double& pfS, double& pfLPS, double& flpf, int loopcounter);
-    void qAeqBxC(struct fquaternion& pqA, struct fquaternion& pqB, struct fquaternion& pqC);
-    void qAeqAxB(struct fquaternion& pqA, struct fquaternion& pqB);
-    struct fquaternion qconjgAxB(struct fquaternion& pqA, struct fquaternion& pqB);
-    void fqAeqNormqA(struct fquaternion& pqA);
-    void fqAeq1(struct fquaternion& pqA);
+    void qAeqBxC(Eigen::Quaternion<double>& pqA, Eigen::Quaternion<double>& pqB, Eigen::Quaternion<double>& pqC);
+    void qAeqAxB(Eigen::Quaternion<double>& pqA, Eigen::Quaternion<double>& pqB);
+    Eigen::Quaternion<double> qconjgAxB(Eigen::Quaternion<double>& pqA, Eigen::Quaternion<double>& pqB);
+    void fqAeqNormqA(Eigen::Quaternion<double>& pqA);
+    void fqAeq1(Eigen::Quaternion<double>& pqA);
     void fRotationVectorDegFromRotationMatrix(double R[][3], double rvecdeg[]);
-    void fQuaternionFromRotationVectorDeg(struct fquaternion& pq, double rvecdeg[], double fscaling);
-    void fRotationVectorDegFromQuaternion(struct fquaternion& pq, double rvecdeg[]);
-    void fLPFOrientationQuaternion(struct fquaternion& pq,
-                                   struct fquaternion& pLPq,
+    void fQuaternionFromRotationVectorDeg(Eigen::Quaternion<double>& pq, double rvecdeg[], double fscaling);
+    void fRotationVectorDegFromQuaternion(Eigen::Quaternion<double>& pq, double rvecdeg[]);
+    void fLPFOrientationQuaternion(Eigen::Quaternion<double>& pq,
+                                   Eigen::Quaternion<double>& pLPq,
                                    double flpf,
                                    double delta_t,
                                    double angular_velocity_vec[],

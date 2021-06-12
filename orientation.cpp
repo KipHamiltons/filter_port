@@ -416,7 +416,7 @@ namespace filter::orientation {
     }
 
     // computes normalized rotation quaternion from a rotation vector (deg)
-    void fQuaternionFromRotationVectorDeg(struct fquaternion& pq, double rvecdeg[], double fscaling) {
+    void fQuaternionFromRotationVectorDeg(Eigen::Quaternion<double>& pq, double rvecdeg[], double fscaling) {
         double fetadeg    = 0.0;  // rotation angle (deg)
         double fetarad    = 0.0;  // rotation angle (rad)
         double fetarad2   = 0.0;  // eta (rad)^2
@@ -446,116 +446,129 @@ namespace filter::orientation {
         }
         else {
             // use exact calculation
-            sinhalfeta = static_cast<double>(sinf(0.5F * fetarad));
+            sinhalfeta = static_cast<double>(std::sin(0.5 * fetarad));
         }
+        double q1;
+        double q2;
+        double q3;
 
         // compute the vector quaternion components q1, q2, q3
         if (fetadeg != 0.0F) {
             // general case with non-zero rotation angle
-            ftmp  = fscaling * sinhalfeta / fetadeg;
-            pq.q1 = rvecdeg[0] * ftmp;  // q1 = nx * sin(eta/2)
-            pq.q2 = rvecdeg[1] * ftmp;  // q2 = ny * sin(eta/2)
-            pq.q3 = rvecdeg[2] * ftmp;  // q3 = nz * sin(eta/2)
+            ftmp = fscaling * sinhalfeta / fetadeg;
+            q1   = rvecdeg[0] * ftmp;  // q1 = nx * sin(eta/2)
+            q2   = rvecdeg[1] * ftmp;  // q2 = ny * sin(eta/2)
+            q3   = rvecdeg[2] * ftmp;  // q3 = nz * sin(eta/2)
         }
         else {
             // zero rotation angle giving zero vector component
-            pq.q1 = pq.q2 = pq.q3 = 0.0F;
+            q1 = q2 = q3 = 0.0F;
         }
 
         // compute the scalar quaternion component q0 by explicit normalization
         // taking care to avoid rounding errors giving negative operand to sqrt
-        fvecsq = pq.q1 * pq.q1 + pq.q2 * pq.q2 + pq.q3 * pq.q3;
+        fvecsq = q1 * q1 + q2 * q2 + q3 * q3;
         if (fvecsq <= 1.0F) {
             // normal case
-            pq.q0 = std::sqrt(1.0F - fvecsq);
+            pq.w() = std::sqrt(1.0F - fvecsq);
         }
         else {
             // rounding errors are present
-            pq.q0 = 0.0F;
+            pq.w() = 0.0F;
         }
+        pq.vec() = Eigen::Matrix<double, 3, 1>(q1, q2, q3);
     }
 
     // compute the orientation quaternion from a 3x3 rotation matrix
-    void fQuaternionFromRotationMatrix(double R[][3], struct fquaternion& pq) {
+    void fQuaternionFromRotationMatrix(double R[][3], Eigen::Quaternion<double>& pq) {
         double fq0sq    = 0.0;  // q0^2
         double recip4q0 = 0.0;  // 1/4q0
+        double q1;
+        double q2;
+        double q3;
 
         // the quaternion is not explicitly normalized in this function on the assumption that it
         // is supplied with a normalized rotation matrix. if the rotation matrix is normalized then
         // the quaternion will also be normalized even if the case of small q0
 
         // get q0^2 and q0
-        fq0sq = 0.25F * (1.0F + R[0][0] + R[1][1] + R[2][2]);
-        pq.q0 = std::sqrt(std::fabs(fq0sq));
+        fq0sq  = 0.25F * (1.0F + R[0][0] + R[1][1] + R[2][2]);
+        pq.w() = std::sqrt(std::fabs(fq0sq));
 
         // normal case when q0 is not small meaning rotation angle not near 180 deg
-        if (pq.q0 > SMALLQ0) {
+        if (pq.w() > SMALLQ0) {
             // calculate q1 to q3
-            recip4q0 = 0.25F / pq.q0;
-            pq.q1    = recip4q0 * (R[1][2] - R[2][1]);
-            pq.q2    = recip4q0 * (R[2][0] - R[0][2]);
-            pq.q3    = recip4q0 * (R[0][1] - R[1][0]);
+            recip4q0 = 0.25F / pq.w();
+            q1       = recip4q0 * (R[1][2] - R[2][1]);
+            q2       = recip4q0 * (R[2][0] - R[0][2]);
+            q3       = recip4q0 * (R[0][1] - R[1][0]);
         }  // end of general case
         else {
             // special case of near 180 deg corresponds to nearly symmetric matrix
             // which is not numerically well conditioned for division by small q0
             // instead get absolute values of q1 to q3 from leading diagonal
-            pq.q1 = std::sqrt(std::fabs(0.5F * (1.0F + R[0][0]) - fq0sq));
-            pq.q2 = std::sqrt(std::fabs(0.5F * (1.0F + R[1][1]) - fq0sq));
-            pq.q3 = std::sqrt(std::fabs(0.5F * (1.0F + R[2][2]) - fq0sq));
+            q1 = std::sqrt(std::fabs(0.5F * (1.0F + R[0][0]) - fq0sq));
+            q2 = std::sqrt(std::fabs(0.5F * (1.0F + R[1][1]) - fq0sq));
+            q3 = std::sqrt(std::fabs(0.5F * (1.0F + R[2][2]) - fq0sq));
 
             // correct the signs of q1 to q3 by examining the signs of differenced off-diagonal terms
             if ((R[1][2] - R[2][1]) < 0.0F) {
-                pq.q1 = -pq.q1;
+                q1 = -q1;
             }
             if ((R[2][0] - R[0][2]) < 0.0F) {
-                pq.q2 = -pq.q2;
+                q2 = -q2;
             }
             if ((R[0][1] - R[1][0]) < 0.0F) {
-                pq.q3 = -pq.q3;
+                q3 = -q3;
             }
         }  // end of special case
+
+        pq.vec() = Eigen::Matrix<double, 3, 1>(q1, q2, q3);
     }
 
     // compute the rotation matrix from an orientation quaternion
-    void fRotationMatrixFromQuaternion(double R[][3], struct fquaternion& pq) {
-        double f2q    = 0.0;
-        double f2q0q0 = 0.0;
-        double f2q0q1 = 0.0;
-        double f2q0q2 = 0.0;
-        double f2q0q3 = 0.0;
-        double f2q1q1 = 0.0;
-        double f2q1q2 = 0.0;
-        double f2q1q3 = 0.0;
-        double f2q2q2;
-        double f2q2q3;
-        double f2q3q3;
+    void fRotationMatrixFromQuaternion(double R[][3], Eigen::Quaternion<double>& pq) {
+        double f2q                                  = 0.0;
+        double f2q0q0                               = 0.0;
+        double f2q0q1                               = 0.0;
+        double f2q0q2                               = 0.0;
+        double f2q0q3                               = 0.0;
+        double f2q1q1                               = 0.0;
+        double f2q1q2                               = 0.0;
+        double f2q1q3                               = 0.0;
+        double f2q2q2                               = 0.0;
+        double f2q2q3                               = 0.0;
+        double f2q3q3                               = 0.0;
+        const Eigen::Matrix<double, 3, 1> imag_part = pq.vec();
+        double q1                                   = imag_part.x();
+        double q2                                   = imag_part.y();
+        double q3                                   = imag_part.z();
 
         // calculate products
-        f2q    = 2.0F * pq.q0;
-        f2q0q0 = f2q * pq.q0;
-        f2q0q1 = f2q * pq.q1;
-        f2q0q2 = f2q * pq.q2;
-        f2q0q3 = f2q * pq.q3;
-        f2q    = 2.0F * pq.q1;
-        f2q1q1 = f2q * pq.q1;
-        f2q1q2 = f2q * pq.q2;
-        f2q1q3 = f2q * pq.q3;
-        f2q    = 2.0F * pq.q2;
-        f2q2q2 = f2q * pq.q2;
-        f2q2q3 = f2q * pq.q3;
-        f2q3q3 = 2.0F * pq.q3 * pq.q3;
+        f2q    = 2.0F * pq.w();
+        f2q0q0 = f2q * pq.w();
+        f2q0q1 = f2q * q1;
+        f2q0q2 = f2q * q2;
+        f2q0q3 = f2q * q3;
+        f2q    = 2.0F * q1;
+        f2q1q1 = f2q * q1;
+        f2q1q2 = f2q * q2;
+        f2q1q3 = f2q * q3;
+        f2q    = 2.0F * q2;
+        f2q2q2 = f2q * q2;
+        f2q2q3 = f2q * q3;
+        f2q3q3 = 2.0F * q3 * q3;
 
         // calculate the rotation matrix assuming the quaternion is normalized
-        R[0][0] = f2q0q0 + f2q1q1 - 1.0F;
+        R[0][0] = f2q0q0 + f2q1q1 - 1.0;
         R[0][1] = f2q1q2 + f2q0q3;
         R[0][2] = f2q1q3 - f2q0q2;
         R[1][0] = f2q1q2 - f2q0q3;
-        R[1][1] = f2q0q0 + f2q2q2 - 1.0F;
+        R[1][1] = f2q0q0 + f2q2q2 - 1.0;
         R[1][2] = f2q2q3 + f2q0q1;
         R[2][0] = f2q1q3 + f2q0q2;
         R[2][1] = f2q2q3 - f2q0q1;
-        R[2][2] = f2q0q0 + f2q3q3 - 1.0F;
+        R[2][2] = f2q0q0 + f2q3q3 - 1.0;
 
         return;
     }
@@ -626,21 +639,21 @@ namespace filter::orientation {
     }
 
     // computes rotation vector (deg) from rotation quaternion
-    void fRotationVectorDegFromQuaternion(struct fquaternion& pq, double rvecdeg[]) {
+    void fRotationVectorDegFromQuaternion(Eigen::Quaternion<double>& pq, double rvecdeg[]) {
         double fetarad;     // rotation angle (rad)
         double fetadeg;     // rotation angle (deg)
         double sinhalfeta;  // sin(eta/2)
         double ftmp;        // scratch variable
 
         // calculate the rotation angle in the range 0 <= eta < 360 deg
-        if ((pq.q0 >= 1.0F) || (pq.q0 <= -1.0F)) {
+        if ((pq.w() >= 1.0F) || (pq.w() <= -1.0F)) {
             // rotation angle is 0 deg or 2*180 deg = 360 deg = 0 deg
             fetarad = 0.0F;
             fetadeg = 0.0F;
         }
         else {
             // general case returning 0 < eta < 360 deg
-            fetarad = 2.0F * acosf(pq.q0);
+            fetarad = 2.0F * acosf(pq.w());
             fetadeg = fetarad * FRADTODEG;
         }
 
@@ -651,7 +664,7 @@ namespace filter::orientation {
         }
 
         // calculate sin(eta/2) which will be in the range -1 to +1
-        sinhalfeta = (double) sinf(0.5F * fetarad);
+        sinhalfeta = std::sin(0.5 * fetarad);
 
         // calculate the rotation vector (deg)
         if (sinhalfeta == 0.0F) {
@@ -659,27 +672,28 @@ namespace filter::orientation {
             rvecdeg[0] = rvecdeg[1] = rvecdeg[2] = 0.0F;
         }
         else {
+            Eigen::Matrix<double, 3, 1> imag_part = pq.vec();
             // general case with non-zero rotation angle
             ftmp       = fetadeg / sinhalfeta;
-            rvecdeg[0] = pq.q1 * ftmp;
-            rvecdeg[1] = pq.q2 * ftmp;
-            rvecdeg[2] = pq.q3 * ftmp;
+            rvecdeg[0] = imag_part.x() * ftmp;
+            rvecdeg[1] = imag_part.y() * ftmp;
+            rvecdeg[2] = imag_part.z() * ftmp;
         }
 
         return;
     }
 
     // function low pass filters an orientation quaternion and computes virtual gyro rotation rate
-    void fLPFOrientationQuaternion(struct fquaternion& pq,
-                                   struct fquaternion& pLPq,
+    void fLPFOrientationQuaternion(Eigen::Quaternion<double>& pq,
+                                   Eigen::Quaternion<double>& pLPq,
                                    double flpf,
                                    double delta_t,
                                    double angular_velocity_vec[],
                                    int loopcounter) {
         // local variables
-        struct fquaternion fdeltaq;  // delta rotation quaternion
-        double rvecdeg[3];           // rotation vector (deg)
-        double ftmp;                 // scratch variable
+        Eigen::Quaternion<double> fdeltaq;  // delta rotation quaternion
+        double rvecdeg[3];                  // rotation vector (deg)
+        double ftmp;                        // scratch variable
 
         // initialize delay line on first pass: LPq[n]=q[n]
         if (loopcounter == 0) {
@@ -688,39 +702,42 @@ namespace filter::orientation {
 
         // set fdeltaqn to the delta rotation quaternion conjg(fLPq[n-1) . fqn
         fdeltaq = qconjgAxB(pLPq, pq);
-        if (fdeltaq.q0 < 0.0F) {
-            fdeltaq.q0 = -fdeltaq.q0;
-            fdeltaq.q1 = -fdeltaq.q1;
-            fdeltaq.q2 = -fdeltaq.q2;
-            fdeltaq.q3 = -fdeltaq.q3;
+        if (fdeltaq.w() < 0.0F) {
+            fdeltaq.w()   = -fdeltaq.w();
+            fdeltaq.vec() = -fdeltaq.vec();
+            // fdeltaq.q1  = -fdeltaq.q1;
+            // fdeltaq.q2  = -fdeltaq.q2;
+            // fdeltaq.q3  = -fdeltaq.q3;
         }
 
         // set ftmp to a scaled lpf value which equals flpf in the limit of small rotations (q0=1)
         // but which rises as the delta rotation angle increases (q0 tends to zero)
-        ftmp = flpf + 0.75F * (1.0F - fdeltaq.q0);
+        ftmp = flpf + 0.75F * (1.0F - fdeltaq.w());
         if (ftmp > 1.0F) {
             ftmp = 1.0F;
         }
 
         // scale the delta rotation by the corrected lpf value
-        fdeltaq.q1 *= ftmp;
-        fdeltaq.q2 *= ftmp;
-        fdeltaq.q3 *= ftmp;
+        // fdeltaq.q1 *= ftmp;
+        // fdeltaq.q2 *= ftmp;
+        // fdeltaq.q3 *= ftmp;
+        fdeltaq.vec() = ftmp * fdeltaq.vec();
 
         // compute the scalar component q0
-        ftmp = fdeltaq.q1 * fdeltaq.q1 + fdeltaq.q2 * fdeltaq.q2 + fdeltaq.q3 * fdeltaq.q3;
-        if (ftmp <= 1.0F) {
+        // ftmp = fdeltaq.q1 * fdeltaq.q1 + fdeltaq.q2 * fdeltaq.q2 + fdeltaq.q3 * fdeltaq.q3;
+        ftmp = fdeltaq.vec().dot(fdeltaq.vec());
+        if (ftmp <= 1.0) {
             // normal case
-            fdeltaq.q0 = std::sqrt(1.0F - ftmp);
+            fdeltaq.w() = std::sqrt(1.0 - ftmp);
         }
         else {
             // rounding errors present so simply set scalar component to 0
-            fdeltaq.q0 = 0.0F;
+            fdeltaq.w() = 0.0;
         }
 
         // calculate the delta rotation vector from fdeltaqn and the virtual gyro angular velocity (deg/s)
         fRotationVectorDegFromQuaternion(fdeltaq, rvecdeg);
-        ftmp                    = 1.0F / delta_t;
+        ftmp                    = 1.0 / delta_t;
         angular_velocity_vec[0] = rvecdeg[0] * ftmp;
         angular_velocity_vec[1] = rvecdeg[1] * ftmp;
         angular_velocity_vec[2] = rvecdeg[2] * ftmp;
@@ -749,79 +766,110 @@ namespace filter::orientation {
     }
 
     // function compute the quaternion product qA * qB
-    void qAeqBxC(struct fquaternion& pqA, struct fquaternion& pqB, struct fquaternion& pqC) {
-        pqA.q0 = pqB.q0 * pqC.q0 - pqB.q1 * pqC.q1 - pqB.q2 * pqC.q2 - pqB.q3 * pqC.q3;
-        pqA.q1 = pqB.q0 * pqC.q1 + pqB.q1 * pqC.q0 + pqB.q2 * pqC.q3 - pqB.q3 * pqC.q2;
-        pqA.q2 = pqB.q0 * pqC.q2 - pqB.q1 * pqC.q3 + pqB.q2 * pqC.q0 + pqB.q3 * pqC.q1;
-        pqA.q3 = pqB.q0 * pqC.q3 + pqB.q1 * pqC.q2 - pqB.q2 * pqC.q1 + pqB.q3 * pqC.q0;
+    void qAeqBxC(Eigen::Quaternion<double>& pqA, Eigen::Quaternion<double>& pqB, Eigen::Quaternion<double>& pqC) {
+        Eigen::Matrix<double, 3, 1> imag_part_B = pqB.vec();
+        const double b_q1                       = imag_part_B.x();
+        const double b_q2                       = imag_part_B.y();
+        const double b_q3                       = imag_part_B.z();
+        Eigen::Matrix<double, 3, 1> imag_part_C = pqC.vec();
+        const double c_q1                       = imag_part_C.x();
+        const double c_q2                       = imag_part_C.y();
+        const double c_q3                       = imag_part_C.z();
 
+        pqA               = Eigen::Quaternion<double>::Identity();
+        pqA.w()           = pqB.w() * pqC.w() - b_q1 * c_q1 - b_q2 * c_q2 - b_q3 * c_q3;
+        const double a_q1 = pqB.w() * c_q1 + b_q1 * pqC.w() + b_q2 * c_q3 - b_q3 * c_q2;
+        const double a_q2 = pqB.w() * c_q2 - b_q1 * c_q3 + b_q2 * pqC.w() + b_q3 * c_q1;
+        const double a_q3 = pqB.w() * c_q3 + b_q1 * c_q2 - b_q2 * c_q1 + b_q3 * pqC.w();
+        pqA.vec()         = Eigen::Matrix<double, 3, 1>(a_q1, a_q2, a_q3);
         return;
     }
 
     // function compute the quaternion product qA = qA * qB
-    void qAeqAxB(struct fquaternion& pqA, struct fquaternion& pqB) {
-        struct fquaternion qProd;
-
+    void qAeqAxB(Eigen::Quaternion<double>& pqA, Eigen::Quaternion<double>& pqB) {
+        Eigen::Quaternion<double> qProd;
+        Eigen::Matrix<double, 3, 1> imag_part_A = pqA.vec();
+        const double a_q1                       = imag_part_A.x();
+        const double a_q2                       = imag_part_A.y();
+        const double a_q3                       = imag_part_A.z();
+        Eigen::Matrix<double, 3, 1> imag_part_B = pqB.vec();
+        const double b_q1                       = imag_part_B.x();
+        const double b_q2                       = imag_part_B.y();
+        const double b_q3                       = imag_part_B.z();
         // perform the quaternion product
-        qProd.q0 = pqA.q0 * pqB.q0 - pqA.q1 * pqB.q1 - pqA.q2 * pqB.q2 - pqA.q3 * pqB.q3;
-        qProd.q1 = pqA.q0 * pqB.q1 + pqA.q1 * pqB.q0 + pqA.q2 * pqB.q3 - pqA.q3 * pqB.q2;
-        qProd.q2 = pqA.q0 * pqB.q2 - pqA.q1 * pqB.q3 + pqA.q2 * pqB.q0 + pqA.q3 * pqB.q1;
-        qProd.q3 = pqA.q0 * pqB.q3 + pqA.q1 * pqB.q2 - pqA.q2 * pqB.q1 + pqA.q3 * pqB.q0;
+        qProd.w()       = pqA.w() * pqB.w() - a_q1 * b_q1 - a_q2 * b_q2 - a_q3 * b_q3;
+        const double q1 = pqA.w() * b_q1 + a_q1 * pqB.w() + a_q2 * b_q3 - a_q3 * b_q2;
+        const double q2 = pqA.w() * b_q2 - a_q1 * b_q3 + a_q2 * pqB.w() + a_q3 * b_q1;
+        const double q3 = pqA.w() * b_q3 + a_q1 * b_q2 - a_q2 * b_q1 + a_q3 * pqB.w();
 
         // copy the result back into qA
-        pqA = qProd;
-
+        // pqA = qProd;
+        pqA.w()   = qProd.w();
+        pqA.vec() = Eigen::Matrix<double, 3, 1>(q1, q2, q3);
         return;
     }
 
     // function compute the quaternion product conjg(qA) * qB
-    struct fquaternion qconjgAxB(struct fquaternion& pqA, struct fquaternion& pqB) {
-        struct fquaternion qProd;
+    Eigen::Quaternion<double> qconjgAxB(Eigen::Quaternion<double>& pqA, Eigen::Quaternion<double>& pqB) {
+        Eigen::Quaternion<double> qProd;
+        Eigen::Matrix<double, 3, 1> imag_part_A = pqA.vec();
+        const double a_q1                       = imag_part_A.x();
+        const double a_q2                       = imag_part_A.y();
+        const double a_q3                       = imag_part_A.z();
+        Eigen::Matrix<double, 3, 1> imag_part_B = pqB.vec();
+        const double b_q1                       = imag_part_B.x();
+        const double b_q2                       = imag_part_B.y();
+        const double b_q3                       = imag_part_B.z();
 
-        qProd.q0 = pqA.q0 * pqB.q0 + pqA.q1 * pqB.q1 + pqA.q2 * pqB.q2 + pqA.q3 * pqB.q3;
-        qProd.q1 = pqA.q0 * pqB.q1 - pqA.q1 * pqB.q0 - pqA.q2 * pqB.q3 + pqA.q3 * pqB.q2;
-        qProd.q2 = pqA.q0 * pqB.q2 + pqA.q1 * pqB.q3 - pqA.q2 * pqB.q0 - pqA.q3 * pqB.q1;
-        qProd.q3 = pqA.q0 * pqB.q3 - pqA.q1 * pqB.q2 + pqA.q2 * pqB.q1 - pqA.q3 * pqB.q0;
+
+        qProd.w()       = pqA.w() * pqB.w() + a_q1 * b_q1 + a_q2 * b_q2 + a_q3 * b_q3;
+        const double q1 = pqA.w() * b_q1 - a_q1 * pqB.w() - a_q2 * b_q3 + a_q3 * b_q2;
+        const double q2 = pqA.w() * b_q2 + a_q1 * b_q3 - a_q2 * pqB.w() - a_q3 * b_q1;
+        const double q3 = pqA.w() * b_q3 - a_q1 * b_q2 + a_q2 * b_q1 - a_q3 * pqB.w();
 
         return qProd;
     }
 
     // function normalizes a rotation quaternion and ensures q0 is non-negative
-    void fqAeqNormqA(struct fquaternion& pqA) {
+    void fqAeqNormqA(Eigen::Quaternion<double>& pqA) {
         double fNorm;  // quaternion Norm
+        const Eigen::Matrix<double, 3, 1> imag_part = pqA.vec();
+        double q1                                   = imag_part.x();
+        double q2                                   = imag_part.y();
+        double q3                                   = imag_part.z();
 
         // calculate the quaternion Norm
-        fNorm = std::sqrt(pqA.q0 * pqA.q0 + pqA.q1 * pqA.q1 + pqA.q2 * pqA.q2 + pqA.q3 * pqA.q3);
+        fNorm = std::sqrt(pqA.w() * pqA.w() + q1 * q1 + q2 * q2 + q3 * q3);
         if (fNorm > CORRUPTQUAT) {
             // general case
             fNorm = 1.0F / fNorm;
-            pqA.q0 *= fNorm;
-            pqA.q1 *= fNorm;
-            pqA.q2 *= fNorm;
-            pqA.q3 *= fNorm;
+            pqA.w() *= fNorm;
+            q1 *= fNorm;
+            q2 *= fNorm;
+            q3 *= fNorm;
         }
         else {
             // return with identity quaternion since the quaternion is corrupted
-            pqA.q0 = 1.0F;
-            pqA.q1 = pqA.q2 = pqA.q3 = 0.0F;
+            pqA.w() = 1.0F;
+            q1 = q2 = q3 = 0.0F;
         }
 
         // correct a negative scalar component if the function was called with negative q0
-        if (pqA.q0 < 0.0F) {
-            pqA.q0 = -pqA.q0;
-            pqA.q1 = -pqA.q1;
-            pqA.q2 = -pqA.q2;
-            pqA.q3 = -pqA.q3;
+        if (pqA.w() < 0.0F) {
+            pqA.w() = -pqA.w();
+            q1      = -q1;
+            q2      = -q2;
+            q3      = -q3;
         }
-
+        pqA.vec() = Eigen::Matrix<double, 3, 1>(q1, q2, q3);
         return;
     }
 
     // set a quaternion to the unit quaternion
-    void fqAeq1(struct fquaternion& pqA) {
-        pqA.q0 = 1.0F;
-        pqA.q1 = pqA.q2 = pqA.q3 = 0.0F;
-
+    void fqAeq1(Eigen::Quaternion<double>& pqA) {
+        // pqA.w() = 1.0F;
+        // pqA.q1 = pqA.q2 = pqA.q3 = 0.0F;
+        pqA = Eigen::Quaternion<double>::Identity();
         return;
     }
 }  // namespace filter::orientation

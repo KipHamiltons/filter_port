@@ -111,12 +111,4 @@ static constexpr double COSDELTAMAX = 0.4226183;  // cos of max +ve geomagnetic 
 // the quaternion type to be transmitted
 using quaternion_type = enum quaternion { Q3, Q3M, Q3G, Q6MA, Q6AG, Q9 };
 
-// quaternion structure definition
-struct fquaternion {
-    double q0;  // scalar component
-    double q1;  // x vector component
-    double q2;  // y vector component
-    double q3;  // z vector component
-};
-
 #endif  // BUILD_HPP
