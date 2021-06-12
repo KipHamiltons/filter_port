@@ -36,6 +36,7 @@
 #include "matrix.hpp"
 #include "orientation.hpp"
 #include "tasks.hpp"
+#include "utilities.hpp"
 
 namespace filter::kalman {
     using filter::matrix::f3x3matrixAeqI;
@@ -51,6 +52,12 @@ namespace filter::kalman {
     using filter::orientation::fRotationVectorDegFromQuaternion;
     using filter::orientation::fWin8AnglesDegFromRotationMatrix;
     using filter::orientation::qAeqBxC;
+    using filter::utilities::c_array_to_eigen_mat;
+    using filter::utilities::eigen_mat_to_c_array;
+    // Suss
+    using filter::matrix::fmatrixAeqI;
+    using filter::matrix::fmatrixAeqInvA;
+
 
     // function initalizes the 6DOF accel + gyro Kalman filter algorithm
     void fInit_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN& pthisSV, int iSensorFS, int iOverSampleRatio) {
@@ -153,7 +160,7 @@ namespace filter::kalman {
         }
 
         // *********************************************************************************
-        // calculate a priori rotation matrix
+        // calculate a priori rotation matrixeigen_mat_to_c_array
         // *********************************************************************************
 
         // compute the angular velocity from the average of the high frequency gyro readings.
@@ -226,15 +233,187 @@ namespace filter::kalman {
         pthisSV.C(2, 3) = -pthisSV.C(0, 5);
         pthisSV.C(2, 4) = -pthisSV.C(1, 5);
 
+        // assorted array pointers
+        double* pfRows[3];
+        int iColInd[3];
+        int iRowInd[3];
+        int iPivot[3];
+        double ftmpA9x3[9][3];  // scratch array
+        double* pP_pluskj   = nullptr;
+        double* pP_plusij   = nullptr;
+        double* pKij        = nullptr;
+        double* pKik        = nullptr;
+        double* pftmpA9x3ik = nullptr;
+        double* pftmpA9x3ij = nullptr;
+        double* pftmpA9x3kj = nullptr;
+        double* pQwij       = nullptr;
+        double* pQwik       = nullptr;
+        double* pQwkj       = nullptr;
+        double* pCik        = nullptr;
+        double* pCjk        = nullptr;
+
+
+        double P_plus_arr[9][9];
+        eigen_mat_to_c_array<double, 9, 9>(pthisSV.P_plus, P_plus_arr);
+        double K_arr[9][3];
+        eigen_mat_to_c_array<double, 9, 3>(pthisSV.K, K_arr);
+        double Qw_arr[9][9];
+        eigen_mat_to_c_array<double, 9, 9>(pthisSV.Qw, Qw_arr);
+        double C_arr[3][9];
+        eigen_mat_to_c_array<double, 3, 9>(pthisSV.C, C_arr);
+
         // *********************************************************************************
         // calculate the Kalman gain matrix K (9x3)
         // K = P- * C^T * inv(C * P- * C^T + Qv) = Qw * C^T * inv(C * Qw * C^T + Qv)
         // Qw is used as a proxy for P- throughout the code
         // P+ is used here as a working array to reduce RAM usage and is re-computed later
         // *********************************************************************************
-        Eigen::Matrix<double, 3, 3> Qv = pthisSV.accel_term_from_Qv * Eigen::Matrix<double, 3, 3>::Identity();
-        pthisSV.K =
-            pthisSV.Qw * pthisSV.C.transpose() * (pthisSV.C * pthisSV.Qw * pthisSV.C.transpose() + Qv).inverse();
+
+        // set ftmpA9x3 = P- * C^T = Qw * C^T where Qw and C are both sparse
+        // C also has a significant number of +1 and -1 entries
+        // ftmpA9x3 is also sparse but not symmetric
+        for (i = 0; i < 9; i++)  // loop over rows of ftmpA9x3
+        {
+            // initialize pftmpA9x3ij for current i, j=0
+            pftmpA9x3ij = ftmpA9x3[i];
+
+            for (j = 0; j < 3; j++)  // loop over columns of ftmpA9x3
+            {
+                // zero ftmpA9x3[i][j]
+                *pftmpA9x3ij = 0.0F;
+
+                // initialize pCjk for current j, k=0
+                pCjk = C_arr[j];
+
+                // initialize pQwik for current i, k=0
+                pQwik = Qw_arr[i];
+
+                // sum matrix products over inner loop over k
+                for (k = 0; k < 9; k++) {
+                    if ((*pQwik != 0.0F) && (*pCjk != 0.0F)) {
+                        if (*pCjk == 1.0F) {
+                            *pftmpA9x3ij += *pQwik;
+                        }
+                        else if (*pCjk == -1.0F) {
+                            *pftmpA9x3ij -= *pQwik;
+                        }
+                        else {
+                            *pftmpA9x3ij += *pQwik * *pCjk;
+                        }
+                    }
+
+                    // increment pCjk and pQwik for next iteration of k
+                    pCjk++;
+                    pQwik++;
+
+                }  // end of loop over k
+
+                // increment pftmpA9x3ij for next iteration of j
+                pftmpA9x3ij++;
+
+            }  // end of loop over j
+        }      // end of loop over i
+
+        // set symmetric P+ (3x3 scratch sub-matrix) to C * P- * C^T + Qv
+        // = C * (Qw * C^T) + Qv = C * ftmpA9x3 + Qv
+        // both C and ftmpA9x3 are sparse but not symmetric
+        for (i = 0; i < 3; i++)  // loop over rows of P+
+        {
+            // initialize pP_plusij for current i, j=i
+            pP_plusij = P_plus_arr[i] + i;
+
+            for (j = i; j < 3; j++)  // loop over above diagonal columns of P+
+            {
+                // zero P+[i][j]
+                *pP_plusij = 0.0F;
+
+                // initialize pCik for current i, k=0
+                pCik = C_arr[i];
+
+                // initialize pftmpA9x3kj for current j, k=0
+                pftmpA9x3kj = *ftmpA9x3 + j;
+
+                // sum matrix products over inner loop over k
+                for (k = 0; k < 9; k++) {
+                    if ((*pCik != 0.0F) && (*pftmpA9x3kj != 0.0F)) {
+                        if (*pCik == 1.0F) {
+                            *pP_plusij += *pftmpA9x3kj;
+                        }
+                        else if (*pCik == -1.0F) {
+                            *pP_plusij -= *pftmpA9x3kj;
+                        }
+                        else {
+                            *pP_plusij += *pCik * *pftmpA9x3kj;
+                        }
+                    }
+
+                    // update pCik and pftmpA9x3kj for next iteration of k
+                    pCik++;
+                    pftmpA9x3kj += 3;
+
+                }  // end of loop over k
+
+                // increment pP_plusij for next iteration of j
+                pP_plusij++;
+
+            }  // end of loop over j
+        }      // end of loop over i
+
+        // add in noise covariance terms to the diagonal
+        P_plus_arr[0][0] += pthisSV.accel_term_from_Qv;
+        P_plus_arr[1][1] += pthisSV.accel_term_from_Qv;
+        P_plus_arr[2][2] += pthisSV.accel_term_from_Qv;
+
+        // copy above diagonal terms of P+ (3x3 scratch sub-matrix) to below diagonal terms
+        P_plus_arr[1][0] = P_plus_arr[0][1];
+        P_plus_arr[2][0] = P_plus_arr[0][2];
+        P_plus_arr[2][1] = P_plus_arr[1][2];
+
+        // TODO: THIS IS ULTRA SUSS...
+        // calculate inverse of P+ (3x3 scratch sub-matrix) = inv(C * P- * C^T + Qv) = inv(C * Qw * C^T + Qv)
+        for (i = 0; i < 3; i++) {
+            pfRows[i] = P_plus_arr[i];
+        }
+        fmatrixAeqInvA(pfRows, iColInd, iRowInd, iPivot, 3);
+        // end(SUSS)
+
+        // set K = P- * C^T * inv(C * P- * C^T + Qv) = Qw * C^T * inv(C * Qw * C^T + Qv)
+        // = ftmpA9x3 * P+ (3x3 sub-matrix)
+        // ftmpA9x3 = Qw * C^T is sparse but P+ (3x3 sub-matrix) is not
+        // K is not symmetric because C is not symmetric
+        for (i = 0; i < 9; i++)  // loop over rows of K9x3
+        {
+            // initialize pKij for i, j=0
+            pKij = K_arr[i];
+
+            for (j = 0; j < 3; j++)  // loop over columns of K9x3
+            {
+                // zero the matrix element K[i][j]
+                *pKij = 0.0F;
+
+                // initialize pftmpA9x3ik for i, k=0
+                pftmpA9x3ik = ftmpA9x3[i];
+
+                // initialize pP_pluskj for j, k=0
+                pP_pluskj = *P_plus_arr + j;
+
+                // sum matrix products over inner loop over k
+                for (k = 0; k < 3; k++) {
+                    if (*pftmpA9x3ik != 0.0F) {
+                        *pKij += *pftmpA9x3ik * *pP_pluskj;
+                    }
+
+                    // increment pftmpA9x3ik and pP_pluskj for next iteration of k
+                    pftmpA9x3ik++;
+                    pP_pluskj += 9;
+
+                }  // end of loop over k
+
+                // increment pKij for the next iteration of j
+                pKij++;
+
+            }  // end of loop over j
+        }      // end of loop over i
 
         // *********************************************************************************
         // calculate a posteriori error estimate: xe+ = K * ze-
@@ -243,13 +422,13 @@ namespace filter::kalman {
         // update the a posteriori state vector
         for (i = 0; i <= 2; i++) {
             // zero a posteriori error terms
-            pthisSV.orientation_error_deg[i] = pthisSV.gyro_offset_error[i] = pthisSV.linear_accel_error_g1[i] = 0.0;
+            pthisSV.orientation_error_deg[i] = pthisSV.gyro_offset_error[i] = pthisSV.linear_accel_error_g1[i] = 0.0F;
 
             // accumulate the error vector terms K * ze-
             for (k = 0; k < 3; k++) {
-                pthisSV.orientation_error_deg[i] += pthisSV.K(i, k) * pthisSV.gravity_accel_minus_gravity_gyro[k];
-                pthisSV.gyro_offset_error[i] += pthisSV.K(i + 3, k) * pthisSV.gravity_accel_minus_gravity_gyro[k];
-                pthisSV.linear_accel_error_g1[i] += pthisSV.K(i + 6, k) * pthisSV.gravity_accel_minus_gravity_gyro[k];
+                pthisSV.orientation_error_deg[i] += K_arr[i][k] * pthisSV.gravity_accel_minus_gravity_gyro[k];
+                pthisSV.gyro_offset_error[i] += K_arr[i + 3][k] * pthisSV.gravity_accel_minus_gravity_gyro[k];
+                pthisSV.linear_accel_error_g1[i] += K_arr[i + 6][k] * pthisSV.gravity_accel_minus_gravity_gyro[k];
             }
         }
 
@@ -320,30 +499,135 @@ namespace filter::kalman {
         // both Qw and P+ are used as working arrays in this section
         // at the end of this section, P+ is valid but Qw is over-written
         // ***********************************************************************************
-        pthisSV.P_plus = pthisSV.Qw - pthisSV.K * pthisSV.C * pthisSV.Qw;
+
+        // set P+ (3x9 scratch sub-matrix) to the product C (3x9) * Qw (9x9)
+        // where both C and Qw are sparse and C has a significant number of +1 entries
+        // the resulting matrix is sparse but not symmetric
+        for (i = 0; i < 3; i++)  // loop over the rows of P+
+        {
+            // initialize pP_plusij for current i, j=0
+            pP_plusij = P_plus_arr[i];
+
+            for (j = 0; j < 9; j++)  // loop over the columns of P+
+            {
+                // zero P+[i][j]
+                *pP_plusij = 0.0;
+
+                // initialize pCik for current i, k=0
+                pCik = C_arr[i];
+
+                // initialize pQwkj for current j, k=0
+                pQwkj = &Qw_arr[0][j];
+
+                // sum matrix products over inner loop over k
+                for (k = 0; k < 9; k++) {
+                    if ((*pCik != 0.0F) && (*pQwkj != 0.0F)) {
+                        if (*pCik == 1.0F) {
+                            *pP_plusij += *pQwkj;
+                        }
+                        else if (*pCik == -1.0F) {
+                            *pP_plusij -= *pQwkj;
+                        }
+                        else {
+                            *pP_plusij += *pCik * *pQwkj;
+                        }
+                    }
+
+                    // update pCik and pQwkj for next iteration of k
+                    pCik++;
+                    pQwkj += 9;
+
+                }  // end of loop over k
+
+                // increment pP_plusij for next iteration of j
+                pP_plusij++;
+
+            }  // end of loop over j
+        }      // end of loop over i
+
+        // compute P+ = (I9 - K * C) * Qw = Qw - K * (C * Qw) = Qw - K * P+ (3x9 sub-matrix)
+        // storing result P+ in Qw and over-writing Qw which is OK since Qw is later computed from P+
+        // where working array P+ (6x12 sub-matrix) is sparse but K is not sparse
+        // only on and above diagonal terms of P+ are computed since P+ is symmetric
+        for (i = 0; i < 9; i++) {
+            // initialize pQwij for i, j=i
+            pQwij = Qw_arr[i] + i;
+
+            for (j = i; j < 9; j++) {
+                // initialize pKik for i, k=0
+                pKik = K_arr[i];
+
+                // initialize pP_pluskj for j, k=0
+                pP_pluskj = *P_plus_arr + j;
+
+                // compute on and above diagonal matrix entry
+                for (k = 0; k < 3; k++) {
+                    // check for non-zero values since P+ (3x9 scratch sub-matrix) is sparse
+                    if (*pP_pluskj != 0.0F) {
+                        *pQwij -= *pKik * *pP_pluskj;
+                    }
+
+                    // increment pKik and pP_pluskj for next iteration of k
+                    pKik++;
+                    pP_pluskj += 9;
+
+                }  // end of loop over k
+
+                // increment pQwij for next iteration of j
+                pQwij++;
+
+            }  // end of loop over j
+        }      // end of loop over i
+
+        // Qw now holds the on and above diagonal elements of P+ (9x9)
+        // so perform a simple copy to the all elements of P+
+        // after execution of this code P+ is valid but Qw remains invalid
+        for (i = 0; i < 9; i++) {
+            // initialize pP_plusij and pQwij for i, j=i
+            pP_plusij = P_plus_arr[i] + i;
+            pQwij     = Qw_arr[i] + i;
+
+            // copy the on-diagonal elements and increment pointers to enter loop at j=i+1
+            *(pP_plusij++) = *(pQwij++);
+
+            // loop over above diagonal columns j copying to below-diagonal elements
+            for (j = i + 1; j < 9; j++) {
+                *(pP_plusij++) = P_plus_arr[j][i] = *(pQwij++);
+            }
+        }
 
         // *********************************************************************************
         // re-create the noise covariance matrix Qw=fn(P+) for the next iteration
         // using the elements of P+ which are now valid
         // Qw was over-written earlier but is here recomputed (all elements)
         // *********************************************************************************
-        pthisSV.Qw = Eigen::Matrix<double, 9, 9>::Zero();
+
+        // zero the matrix Qw (9x9)
+        for (i = 0; i < 9; i++) {
+            for (j = 0; j < 9; j++) {
+                Qw_arr[i][j] = 0.0F;
+            }
+        }
 
         // update the covariance matrix components
         for (i = 0; i < 3; i++) {
-            // Qw[th-th-] = Qw[0(2,0)2] = E[th-(th-)^T] = Q[th+th+] + deltat^2 * (Q[b+b+] + (Qwb + QvG) * I)
-            pthisSV.Qw(i, i) = pthisSV.P_plus(i, i)
-                               + pthisSV.DELTA_T_SQUARED * (pthisSV.P_plus(i + 3, i + 3) + pthisSV.FQWB_plus_FQVG);
+            // Qw[th-th-] = Qw[0-2][0-2] = E[th-(th-)^T] = Q[th+th+] + deltat^2 * (Q[b+b+] + (Qwb + QvG) * I)
+            Qw_arr[i][i] =
+                P_plus_arr[i][i] + pthisSV.DELTA_T_SQUARED * (P_plus_arr[i + 3][i + 3] + pthisSV.FQWB_plus_FQVG);
 
-            // Qw[b-b-] = Qw[3(5,3)5] = E[b-(b-)^T] = Q[b+b+] + Qwb * I
-            pthisSV.Qw(i + 3, i + 3) = pthisSV.P_plus(i + 3, i + 3) + FQWB_6DOF_GY_KALMAN;
+            // Qw[b-b-] = Qw[3-5][3-5] = E[b-(b-)^T] = Q[b+b+] + Qwb * I
+            Qw_arr[i + 3][i + 3] = P_plus_arr[i + 3][i + 3] + FQWB_6DOF_GY_KALMAN;
 
-            // Qw[th-b-] = Qw[0(2,3)5] = E[th-(b-)^T] = -deltat * (Q[b+b+] + Qwb * I) = -deltat * Qw[b-b-]
-            pthisSV.Qw(i, i + 3) = pthisSV.Qw(i + 3, i) = -pthisSV.DELTA_T * pthisSV.Qw(i + 3, i + 3);
+            // Qw[th-b-] = Qw[0-2][3-5] = E[th-(b-)^T] = -deltat * (Q[b+b+] + Qwb * I) = -deltat * Qw[b-b-]
+            Qw_arr[i][i + 3] = Qw_arr[i + 3][i] = -pthisSV.DELTA_T * Qw_arr[i + 3][i + 3];
 
-            // Qw[a-a-] = Qw[6(8,6)8] = E[a-(a-)^T] = ca^2 * Q[a+a+] + Qwa * I
-            pthisSV.Qw(i + 6, i + 6) = pthisSV.FCA_squared * pthisSV.P_plus(i + 6, i + 6) + FQWA_6DOF_GY_KALMAN;
+            // Qw[a-a-] = Qw[6-8][6-8] = E[a-(a-)^T] = ca^2 * Q[a+a+] + Qwa * I
+            Qw_arr[i + 6][i + 6] = pthisSV.FCA_squared * P_plus_arr[i + 6][i + 6] + FQWA_6DOF_GY_KALMAN;
         }
 
+        pthisSV.P_plus = c_array_to_eigen_mat<double, 9, 9>(P_plus_arr);
+        pthisSV.K      = c_array_to_eigen_mat<double, 9, 3>(K_arr);
+        pthisSV.Qw     = c_array_to_eigen_mat<double, 9, 9>(Qw_arr);
+        pthisSV.C      = c_array_to_eigen_mat<double, 3, 9>(C_arr);
     }  // end fRun_6DOF_GY_KALMAN
 }  // namespace filter::kalman

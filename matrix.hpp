@@ -32,6 +32,9 @@
 #include "build.hpp"
 namespace filter::matrix {
     // function prototypes
+    void fmatrixAeqInvA(double* A[], int iColInd[], int iRowInd[], int iPivot[], int isize);
+    void fmatrixAeqI(double* A[], int rc);
+
     void f3x3matrixAeqI(Eigen::Matrix<double, 3, 3>& A);
     void f3x3matrixAeqInvSymB(Eigen::Matrix<double, 3, 3>& A, Eigen::Matrix<double, 3, 3>& B);
     void f3x3matrixAeqAxScalar(Eigen::Matrix<double, 3, 3>& A, double Scalar);
