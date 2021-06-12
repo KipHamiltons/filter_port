@@ -58,7 +58,7 @@ int main() {
     static constexpr int DECIMATION_FACTOR = 1;
 
     // Initialise the filter
-    filter::kalman::fInit_6DOF_GY_KALMAN(&filter, SAMPLE_RATE, DECIMATION_FACTOR);
+    filter::kalman::fInit_6DOF_GY_KALMAN(filter);
 
     // The output quaternions
     std::vector<Eigen::Quaternion<double>> orientations{};
@@ -68,20 +68,12 @@ int main() {
         auto gyro_reading = gyro_readings[t];
         // The data is expected to be in deg,
         // but converting it doesn't change the result??
-        // gyro_reading[0]   = gyro_reading[0] * M_PI / 180.0f;
-        // gyro_reading[1]   = gyro_reading[1] * M_PI / 180.0f;
-        // gyro_reading[2]   = gyro_reading[2] * M_PI / 180.0f;
+        gyro_reading[0] = gyro_reading[0] * M_PI / 180.0;
+        gyro_reading[1] = gyro_reading[1] * M_PI / 180.0;
+        gyro_reading[2] = gyro_reading[2] * M_PI / 180.0;
 
-        filter::kalman::fRun_6DOF_GY_KALMAN(&filter,
-                                            acc_reading.data(),
-                                            gyro_reading.data(),
-                                            COORDINATE_SYSTEM,
-                                            DECIMATION_FACTOR);
-        fquaternion q = filter.fqPl;
-        Eigen::Quaternion<double> orientation{};
-        orientation.w()   = q.q0;
-        orientation.vec() = Eigen::Vector3d(q.q1, q.q2, q.q3);
-        orientations.emplace_back(orientation);
+        auto quat = filter::kalman::fRun_6DOF_GY_KALMAN(filter, acc_reading, gyro_reading, COORDINATE_SYSTEM);
+        orientations.emplace_back(quat);
     }
 
     std::vector<double> errors;

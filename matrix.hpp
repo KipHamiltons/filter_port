@@ -26,6 +26,9 @@
 #ifndef MATRIX_HPP
 #define MATRIX_HPP
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+
 #include "build.hpp"
 namespace filter::matrix {
     // function prototypes
