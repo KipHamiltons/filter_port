@@ -39,7 +39,6 @@
 
 namespace filter::kalman {
     using filter::matrix::f3x3matrixAeqI;
-    using filter::matrix::fmatrixAeqInvA;
     using filter::orientation::f3DOFTiltAndroid;
     using filter::orientation::f3DOFTiltNED;
     using filter::orientation::f3DOFTiltWin8;
@@ -381,7 +380,7 @@ namespace filter::kalman {
         for (i = 0; i < 3; i++) {
             pfRows[i] = pthisSV.P_plus[i];
         }
-        fmatrixAeqInvA(pfRows, iColInd, iRowInd, iPivot, 3);
+        pfRows = pfRows.inverse();
 
         // set K = P- * C^T * inv(C * P- * C^T + Qv) = Qw * C^T * inv(C * Qw * C^T + Qv)
         // = ftmpA9x3 * P+ (3x3 sub-matrix)

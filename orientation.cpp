@@ -77,7 +77,7 @@ namespace filter::orientation {
 
         // check for vertical up or down gimbal lock case
         if (fmodGyz == 0.0) {
-            f3x3matrixAeqScalar(fR, 0.0);
+            fR      = Eigen::Matrix<double, 3, 3>::Zero();
             R(1, 1) = 1.0;
             if (fGp[0] >= 0.0) {
                 R(0, 2) = 1.0;
@@ -142,7 +142,7 @@ namespace filter::orientation {
 
         // check for vertical up or down gimbal lock case
         if (fmodGxz == 0.0) {
-            f3x3matrixAeqScalar(fR, 0.0);
+            fR      = Eigen::Matrix<double, 3, 3>::Zero();
             R(0, 0) = 1.0;
             if (fGp[1] >= 0.0) {
                 R(1, 2) = -1.0;
