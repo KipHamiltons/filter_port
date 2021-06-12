@@ -26,6 +26,9 @@
 #ifndef TASKS_HPP
 #define TASKS_HPP
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+
 #include "build.hpp"
 namespace filter::tasks {
     // 6DOF Kalman filter accelerometer and gyroscope state vector structure

@@ -26,6 +26,9 @@
 #ifndef ORIENTATION_HPP
 #define ORIENTATION_HPP
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+
 #include "build.hpp"
 
 namespace filter::orientation {

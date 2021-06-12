@@ -1,6 +1,9 @@
 #ifndef KALMAN_HPP
 #define KALMAN_HPP
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+
 #include "build.hpp"
 #include "tasks.hpp"
 
