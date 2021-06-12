@@ -48,7 +48,6 @@ namespace filter::orientation {
     static constexpr double SMALLMODULUS = 0.01;   // limit where rounding errors may appear
 
     using filter::matrix::f3x3matrixAeqI;
-    using filter::matrix::f3x3matrixAeqScalar;
     using filter::utilities::acos_deg;
     using filter::utilities::asin_deg;
     using filter::utilities::atan2_deg;

@@ -33,7 +33,6 @@
 namespace filter::matrix {
     // function prototypes
     void f3x3matrixAeqI(Eigen::Matrix<double, 3, 3>& A);
-    void f3x3matrixAeqScalar(Eigen::Matrix<double, 3, 3>& A, double Scalar);
     void f3x3matrixAeqInvSymB(Eigen::Matrix<double, 3, 3>& A, Eigen::Matrix<double, 3, 3>& B);
     void f3x3matrixAeqAxScalar(Eigen::Matrix<double, 3, 3>& A, double Scalar);
     void f3x3matrixAeqMinusA(Eigen::Matrix<double, 3, 3>& A);
