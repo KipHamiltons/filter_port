@@ -37,8 +37,6 @@ static constexpr int NED     = 0;  // identifier for NED angle output
 static constexpr int ANDROID = 1;  // identifier for Android angle output
 static constexpr int WIN8    = 2;  // identifier for Windows 8 angle output
 
-#define COMPUTE_6DOF_GY_KALMAN  // 6DOF accel and gyro (Kalman): (1x accel + 1x gyro)
-
 // sampling rate and kalman filter timing
 static constexpr int FTM_INCLK_HZ     = 1000000;  // int: 1MHz FTM timer frequency set in PE: do not change
 static constexpr int SENSORFS         = 200;      // int: 200Hz: frequency (Hz) of sensor sampling process
@@ -106,9 +104,5 @@ static constexpr double FCD_9DOF_GBY_KALMAN = 0.5;  // magnetic disturbance deca
 // maximum geomagnetic inclination angle tracked by Kalman filter
 static constexpr double SINDELTAMAX = 0.9063078;  // sin of max +ve geomagnetic inclination angle: here 65.0 deg
 static constexpr double COSDELTAMAX = 0.4226183;  // cos of max +ve geomagnetic inclination angle: here 65.0 deg
-
-
-// the quaternion type to be transmitted
-using quaternion_type = enum quaternion { Q3, Q3M, Q3G, Q6MA, Q6AG, Q9 };
 
 #endif  // BUILD_HPP
