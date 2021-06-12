@@ -51,12 +51,15 @@
 #define COSDELTAMAX 0.4226183F  // cos of max +ve geomagnetic inclination angle: here 65.0 deg
 
 namespace filter::kalman {
-    void fInit_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN* pthisSV, int iSensorFS, int iOverSampleRatio);
-    void fRun_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN* pthisSV,
+    // template <typename Scalar>
+    void fInit_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN& pthisSV, int iSensorFS, int iOverSampleRatio);
+    // template <typename Scalar>
+    void fRun_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN& pthisSV,
                              //  struct AccelSensor* pthisAccel,
-                             double accel_reading[3],
+                             //  double accel_reading[3],
+                             Eigen::Matrix<double, 3, 1> accel_reading,
                              //  struct GyroSensor* pthisGyro,
-                             double gyro_reading[3],
+                             Eigen::Matrix<double, 3, 1> gyro_reading,
                              int ithisCoordSystem,
                              int iOverSampleRatio);
 }  // namespace filter::kalman

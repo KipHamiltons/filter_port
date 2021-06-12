@@ -26,71 +26,78 @@
 #ifndef TASKS_HPP
 #define TASKS_HPP
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+
 #include "build.hpp"
 namespace filter::tasks {
     // 6DOF Kalman filter accelerometer and gyroscope state vector structure
+    // template <typename Scalar>
     struct SV_6DOF_GY_KALMAN {
+        using Scalar = double;
         // start: elements common to all motion state vectors
         // Euler angles
-        double fPhiPl;  // roll (deg)
-        double fThePl;  // pitch (deg)
-        double fPsiPl;  // yaw (deg)
-        double fRhoPl;  // compass (deg)
-        double fChiPl;  // tilt from vertical (deg)
+        Scalar fPhiPl;  // roll (deg)
+        Scalar fThePl;  // pitch (deg)
+        Scalar fPsiPl;  // yaw (deg)
+        Scalar fRhoPl;  // compass (deg)
+        Scalar fChiPl;  // tilt from vertical (deg)
         // orientation matrix, quaternion and rotation vector
-        double fRPl[3][3];        // a posteriori  rotation matrix
-        struct fquaternion fqPl;  // a posteriori orientation quaternion
-        double fRVecPl[3];        // rotation vector
+        Eigen::Matrix<Scalar, 3, 3> fRPl = Eigen::Matrix<Scalar, 3, 3>::Identity();  // a posteriori  rotation matrix
+        Eigen::Quaternion<Scalar> fqPl = Eigen::Quaternion<Scalar>::Identity();  // a posteriori orientation quaternion
+        Eigen::Matrix<Scalar, 3, 1> fRVecPl;                                     // rotation vector
         // angular velocity
-        double fOmega[3];  // angular velocity (deg/s)
+        Eigen::Matrix<Scalar, 3, 1> fOmega;  // angular velocity (deg/s)
         // systick timer for benchmarking
         int systick;  // systick timer
         // end: elements common to all motion state vectors
 
         // elements transmitted over bluetooth in kalman packet
-        double fbPl[3];      // gyro offset (deg/s)
-        double fThErrPl[3];  // orientation error (deg)
-        double fbErrPl[3];   // gyro offset error (deg/s)
+        Eigen::Matrix<Scalar, 3, 1> fbPl     = Eigen::Matrix<Scalar, 3, 1>::Zero();  // gyro offset (deg/s)
+        Eigen::Matrix<Scalar, 3, 1> fThErrPl = Eigen::Matrix<Scalar, 3, 1>::Zero();  // orientation error (deg)
+        Eigen::Matrix<Scalar, 3, 1> fbErrPl  = Eigen::Matrix<Scalar, 3, 1>::Zero();  // gyro offset error (deg/s)
         // end elements transmitted in kalman packet
 
-        double fzErrMi[3];           // angular error (deg) between a priori and eCompass
-                                     // orientations
-        double fRMi[3][3];           // a priori rotation matrix
-        struct fquaternion fqMi;     // a priori orientation quaternion
-        struct fquaternion fDeltaq;  // delta a priori or a posteriori quaternion
-        double faSePl[3];            // linear acceleration (g, sensor frame)
-        double faErrSePl[3];         // linear acceleration error (g, sensor frame)
-        double fgErrSeMi[3];         // difference (g, sensor frame) of gravity vector (accel)
-                                     // and gravity vector (gyro)
-        double fgSeGyMi[3];          // gravity vector (g, sensor frame) measurement from gyro
-        double faSeMi[3];            // linear acceleration (g, sensor frame)
-        double fQvAA;                // accelerometer terms of Qv
-        double fPPlus9x9[9][9];      // covariance matrix P+
-        double fK9x3[9][3];          // kalman filter gain matrix K
-        double fQw9x9[9][9];         // covariance matrix Qw
-        double fC3x9[3][9];          // measurement matrix C
-        double fcasq;                // FCA * FCA;
-        double fFastdeltat;          // sensor sampling interval (s) = 1 / SENSORFS
-        double fdeltat;              // kalman filter sampling interval (s) = OVERSAMPLE_RATIO /
-                                     // SENSORFS
-        double fdeltatsq;            // fdeltat * fdeltat;
-        double fQwbplusQvG;          // FQWB + FQVG;
-        int iFirstOrientationLock;   // denotes that 6DOF orientation has locked to 3DOF
-        int resetflag;               // flag to request re-initialization on next pass
+        Eigen::Matrix<Scalar, 3, 1> fzErrMi;  // angular error (deg) between a priori and eCompass
+                                              // orientations
+        Eigen::Matrix<Scalar, 3, 3> fRMi;     // a priori rotation matrix
+        Eigen::Quaternion<Scalar> fqMi;       // a priori orientation quaternion
+        Eigen::Quaternion<Scalar> fDeltaq;    // delta a priori or a posteriori quaternion
+        Eigen::Matrix<Scalar, 3, 1> faSePl;   // linear acceleration (g, sensor frame)
+        Eigen::Matrix<Scalar, 3, 1> faErrSePl =
+            Eigen::Matrix<Scalar, 3, 1>::Zero();  // linear acceleration error (g, sensor frame)
+        Eigen::Matrix<Scalar, 3, 1> fgErrSeMi;    // difference (g, sensor frame) of gravity vector (accel)
+                                                  // and gravity vector (gyro)
+        Eigen::Matrix<Scalar, 3, 1> fgSeGyMi;     // gravity vector (g, sensor frame) measurement from gyro
+        Eigen::Matrix<Scalar, 3, 1> faSeMi;       // linear acceleration (g, sensor frame)
+        Scalar fQvAA;                             // accelerometer terms of Qv
+        Eigen::Matrix<Scalar, 9, 9> fPPlus9x9;    // covariance matrix P+
+        Eigen::Matrix<Scalar, 9, 3> fK9x3;        // kalman filter gain matrix K
+        Eigen::Matrix<Scalar, 9, 9> fQw9x9 = Eigen::Matrix<Scalar, 9, 9>::Zero();  // covariance matrix Qw
+        Eigen::Matrix<Scalar, 3, 9> fC3x9  = Eigen::Matrix<Scalar, 3, 9>::Zero();  // measurement matrix C
+        Scalar fcasq;                                                              // FCA * FCA;
+        Scalar fFastdeltat;         // sensor sampling interval (s) = 1 / SENSORFS
+        Scalar fdeltat;             // kalman filter sampling interval (s) = OVERSAMPLE_RATIO /
+                                    // SENSORFS
+        Scalar fdeltatsq;           // fdeltat * fdeltat;
+        Scalar fQwbplusQvG;         // FQWB + FQVG;
+        int iFirstOrientationLock;  // denotes that 6DOF orientation has locked to 3DOF
+        bool resetflag = false;     // flag to request re-initialization on next pass
     };
 
     // globals defined in tasks_func.c declared here for use elsewhere
     extern struct AccelSensor thisAccel;
     extern struct GyroSensor thisGyro;
-    extern struct SV_6DOF_GY_KALMAN thisSV_6DOF_GY_KALMAN;
+    // extern struct SV_6DOF_GY_KALMAN<double> thisSV_6DOF_GY_KALMAN;
+    extern struct SV_6DOF_GY_KALMAM thisSV_6DOF_GY_KALMAN;
 
     // function prototypes for functions in tasks_func.c
-    void ApplyAccelHAL(struct AccelSensor* pthisAccel);
-    void ApplyMagHAL(struct MagSensor* pthisMag);
-    void ApplyGyroHAL(struct GyroSensor* pthisGyro, int irow);
-    void RdSensData_Init();
-    void RdSensData_Run();
-    void Fusion_Init();
-    void Fusion_Run();
+    // void ApplyAccelHAL(struct AccelSensor* pthisAccel);
+    // void ApplyMagHAL(struct MagSensor* pthisMag);
+    // void ApplyGyroHAL(struct GyroSensor* pthisGyro, int irow);
+    // void RdSensData_Init();
+    // void RdSensData_Run();
+    // void Fusion_Init();
+    // void Fusion_Run();
 }  // namespace filter::tasks
 #endif  // #ifndef TASKS_HPP
