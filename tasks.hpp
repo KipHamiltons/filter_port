@@ -41,33 +41,33 @@ namespace filter::tasks {
         double compass_deg;  // compass (deg)
         double tilt_deg;     // tilt from vertical (deg)
         // orientation matrix, quaternion and rotation vector
-        double posterior_rot_matrix[3][3];                     // a posteriori  rotation matrix
+        Eigen::Matrix<double, 3, 3> posterior_rot_matrix;      // a posteriori  rotation matrix
         Eigen::Quaternion<double> posterior_orientation_quat;  // a posteriori orientation quaternion
-        double rot_vec[3];                                     // rotation vector
+        Eigen::Matrix<double, 3, 1> rot_vec;                   // rotation vector
         // angular velocity
-        double angular_velocity_vec[3];  // angular velocity (deg/s)
+        Eigen::Matrix<double, 3, 1> angular_velocity_vec;  // angular velocity (deg/s)
         // end: elements common to all motion state vectors
 
         // elements transmitted over bluetooth in kalman packet
-        double gyro_offset[3];            // gyro offset (deg/s)
-        double orientation_error_deg[3];  // orientation error (deg)
-        double gyro_offset_error[3];      // gyro offset error (deg/s)
+        Eigen::Matrix<double, 3, 1> gyro_offset;            // gyro offset (deg/s)
+        Eigen::Matrix<double, 3, 1> orientation_error_deg;  // orientation error (deg)
+        Eigen::Matrix<double, 3, 1> gyro_offset_error;      // gyro offset error (deg/s)
         // end elements transmitted in kalman packet
 
-        double prior_rotation_matrix[3][3];             // a priori rotation matrix
-        Eigen::Quaternion<double> prior_rotation_quat;  // a priori orientation quaternion
-        Eigen::Quaternion<double> delta_quaternion;     // delta a priori or a posteriori quaternion
-        double linear_accel_g1[3];                      // linear acceleration (g, sensor frame)
-        double linear_accel_error_g1[3];                // linear acceleration error (g, sensor frame)
-        double gravity_accel_minus_gravity_gyro[3];     // difference (g, sensor frame) of gravity vector (accel)
-                                                        // and gravity vector (gyro)
-        double gyro_gravity_g[3];                       // gravity vector (g, sensor frame) measurement from gyro
-        double linear_accel_g2[3];                      // linear acceleration (g, sensor frame)
-        double accel_term_from_Qv;                      // accelerometer terms of Qv
-        double P_plus[9][9];                            // covariance matrix P+
-        double K[9][3];                                 // kalman filter gain matrix K
-        double Qw[9][9];                                // covariance matrix Qw
-        double C[3][9];                                 // measurement matrix C
+        Eigen::Matrix<double, 3, 3> prior_rotation_matrix;             // a priori rotation matrix
+        Eigen::Quaternion<double> prior_rotation_quat;                 // a priori orientation quaternion
+        Eigen::Quaternion<double> delta_quaternion;                    // delta a priori or a posteriori quaternion
+        Eigen::Matrix<double, 3, 1> linear_accel_g1;                   // linear acceleration (g, sensor frame)
+        Eigen::Matrix<double, 3, 1> linear_accel_error_g1;             // linear acceleration error (g, sensor frame)
+        Eigen::Matrix<double, 3, 1> gravity_accel_minus_gravity_gyro;  // difference (g, sensor frame) of gravity vector
+                                                                       // (accel) and gravity vector (gyro)
+        Eigen::Matrix<double, 3, 1> gyro_gravity_g;   // gravity vector (g, sensor frame) measurement from gyro
+        Eigen::Matrix<double, 3, 1> linear_accel_g2;  // linear acceleration (g, sensor frame)
+        double accel_term_from_Qv;                    // accelerometer terms of Qv
+        Eigen::Matrix<double, 9, 9> P_plus;           // covariance matrix P+
+        Eigen::Matrix<double, 9, 3> K;                // kalman filter gain matrix K
+        Eigen::Matrix<double, 9, 9> Qw;               // covariance matrix Qw
+        Eigen::Matrix<double, 3, 9> C;                // measurement matrix C
         static constexpr double FCA_squared     = FCA_6DOF_GY_KALMAN * FCA_6DOF_GY_KALMAN;  // FCA * FCA;
         static constexpr double DELTA_T         = OVERSAMPLE_RATIO / SENSORFS;  // kalman filter sampling interval (s)
         static constexpr double DELTA_T_SQUARED = DELTA_T * DELTA_T;
