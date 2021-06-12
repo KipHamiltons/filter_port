@@ -40,12 +40,12 @@
 // #include "string.h"
 // #include "time.h"
 
-// compile time constants that are private to this file
-#define SMALLQ0      0.01F   // limit of quaternion scalar component requiring special algorithm
-#define CORRUPTQUAT  0.001F  // threshold for deciding rotation quaternion is corrupt
-#define SMALLMODULUS 0.01F   // limit where rounding errors may appear
 
 namespace filter::orientation {
+    // compile time constants that are private to this file
+    static constexpr double SMALLQ0      = 0.01;   // limit of quaternion scalar component requiring special algorithm
+    static constexpr double CORRUPTQUAT  = 0.001;  // threshold for deciding rotation quaternion is corrupt
+    static constexpr double SMALLMODULUS = 0.01;   // limit where rounding errors may appear
 
     using filter::matrix::f3x3matrixAeqI;
     using filter::matrix::f3x3matrixAeqScalar;
@@ -54,8 +54,8 @@ namespace filter::orientation {
     using filter::utilities::atan2_deg;
     using filter::utilities::atan_deg;
 
-    // Aerospace NED accelerometer 3DOF tilt function computing rotation matrix fR
-    void f3DOFTiltNED(double fR[][3], double fGp[]) {
+    // Aerospace NED accelerometer 3DOF tilt function computing rotation matrix R
+    void f3DOFTiltNED(Eigen::Matrix<double, 3, 3>& R, Eigen::Matrix<double, 3, 1>& fGp) {
         // the NED self-consistency twist occurs at 90 deg pitch
 
         // local variables
@@ -76,16 +76,16 @@ namespace filter::orientation {
         }
 
         // check for vertical up or down gimbal lock case
-        if (fmodGyz == 0.0F) {
-            f3x3matrixAeqScalar(fR, 0.0F);
-            fR[1][1] = 1.0F;
-            if (fGp[0] >= 0.0F) {
-                fR[0][2] = 1.0F;
-                fR[2][0] = -1.0F;
+        if (fmodGyz == 0.0) {
+            f3x3matrixAeqScalar(fR, 0.0);
+            R(1, 1) = 1.0;
+            if (fGp[0] >= 0.0) {
+                R(0, 2) = 1.0;
+                R(2, 0) = -1.0;
             }
             else {
-                fR[0][2] = -1.0F;
-                fR[2][0] = 1.0F;
+                R(0, 2) = -1.0;
+                R(2, 0) = 1.0;
             }
             return;
         }
@@ -98,29 +98,29 @@ namespace filter::orientation {
 
         // normalize the accelerometer reading into the z column
         for (i = 0; i <= 2; i++) {
-            fR[i][2] = fGp[i] * frecipmodGxyz;
+            R(i, 2) = fGp[i] * frecipmodGxyz;
         }
 
         // construct x column of orientation matrix
-        fR[0][0] = fmodGyz * frecipmodGxyz;
-        fR[1][0] = -fR[0][2] * fR[1][2] * ftmp;
-        fR[2][0] = -fR[0][2] * fR[2][2] * ftmp;
+        R(0, 0) = fmodGyz * frecipmodGxyz;
+        R(1, 0) = -fR(0, 2) * R(1, 2) * ftmp;
+        R(2, 0) = -fR(0, 2) * R(2, 2) * ftmp;
 
         // // construct y column of orientation matrix
-        fR[0][1] = 0.0F;
-        fR[1][1] = fR[2][2] * ftmp;
-        fR[2][1] = -fR[1][2] * ftmp;
+        R(0, 1) = 0.0F;
+        R(1, 1) = R(2, 2) * ftmp;
+        R(2, 1) = -fR(1, 2) * ftmp;
     }
 
-    // Android accelerometer 3DOF tilt function computing rotation matrix fR
-    void f3DOFTiltAndroid(double fR[][3], double fGp[]) {
+    // Android accelerometer 3DOF tilt function computing rotation matrix R
+    void f3DOFTiltAndroid(Eigen::Matrix<double, 3, 3>& R, Eigen::Matrix<double, 3, 1>& fGp) {
         // the Android tilt matrix is mathematically identical to the NED tilt matrix
         // the Android self-consistency twist occurs at 90 deg roll
         f3DOFTiltNED(fR, fGp);
     }
 
-    // Windows 8 accelerometer 3DOF tilt function computing rotation matrix fR
-    void f3DOFTiltWin8(double fR[][3], double fGp[]) {
+    // Windows 8 accelerometer 3DOF tilt function computing rotation matrix R
+    void f3DOFTiltWin8(Eigen::Matrix<double, 3, 3>& R, Eigen::Matrix<double, 3, 1>& fGp) {
         // the Win8 self-consistency twist occurs at 90 deg roll
 
         // local variables
@@ -141,16 +141,16 @@ namespace filter::orientation {
         }
 
         // check for vertical up or down gimbal lock case
-        if (fmodGxz == 0.0F) {
-            f3x3matrixAeqScalar(fR, 0.0F);
-            fR[0][0] = 1.0F;
-            if (fGp[1] >= 0.0F) {
-                fR[1][2] = -1.0F;
-                fR[2][1] = 1.0F;
+        if (fmodGxz == 0.0) {
+            f3x3matrixAeqScalar(fR, 0.0);
+            R(0, 0) = 1.0;
+            if (fGp[1] >= 0.0) {
+                R(1, 2) = -1.0;
+                R(2, 1) = 1.0;
             }
             else {
-                fR[1][2] = 1.0F;
-                fR[2][1] = -1.0F;
+                R(1, 2) = 1.0;
+                R(2, 1) = -1.0;
             }
             return;
         }
@@ -166,89 +166,34 @@ namespace filter::orientation {
 
         // normalize the negated accelerometer reading into the z column
         for (i = 0; i <= 2; i++) {
-            fR[i][2] = -fGp[i] * frecipmodGxyz;
+            R(i, 2) = -fGp[i] * frecipmodGxyz;
         }
 
         // construct x column of orientation matrix
-        fR[0][0] = -fR[2][2] * ftmp;
-        fR[1][0] = 0.0;
-        fR[2][0] = fR[0][2] * ftmp;
+        R(0, 0) = -fR(2, 2) * ftmp;
+        R(1, 0) = 0.0;
+        R(2, 0) = R(0, 2) * ftmp;
 
         // // construct y column of orientation matrix
-        fR[0][1] = fR[0][2] * fR[1][2] * ftmp;
-        fR[1][1] = -fmodGxz * frecipmodGxyz;
+        R(0, 1) = R(0, 2) * R(1, 2) * ftmp;
+        R(1, 1) = -fmodGxz * frecipmodGxyz;
         if (fGp[2] < 0.0F) {
-            fR[1][1] = -fR[1][1];
+            R(1, 1) = -fR(1, 1);
         }
-        fR[2][1] = fR[1][2] * fR[2][2] * ftmp;
+        R(2, 1) = R(1, 2) * R(2, 2) * ftmp;
     }
-
-    // Aerospace NED magnetometer 3DOF flat eCompass function computing rotation matrix fR
-    void f3DOFMagnetometerMatrixNED(double fR[][3], double fBc[]) {
-        // local variables
-        double fmodBxy = 0.0;  // modulus of the x, y magnetometer readings
-
-        // compute the magnitude of the horizontal (x and y) magnetometer reading
-        fmodBxy = std::sqrt(fBc[0] * fBc[0] + fBc[1] * fBc[1]);
-
-        // check for zero field special case where no solution is possible
-        if (fmodBxy == 0.0F) {
-            f3x3matrixAeqI(fR);
-            return;
-        }
-
-        // define the fixed entries in the z row and column
-        fR[2][0] = fR[2][1] = fR[0][2] = fR[1][2] = 0.0F;
-        fR[2][2]                                  = 1.0F;
-
-        // define the remaining entries
-        fR[0][0] = fR[1][1] = fBc[0] / fmodBxy;
-        fR[1][0]            = fBc[1] / fmodBxy;
-        fR[0][1]            = -fR[1][0];
-    }
-
-    // Android magnetometer 3DOF flat eCompass function computing rotation matrix fR
-    void f3DOFMagnetometerMatrixAndroid(double fR[][3], double fBc[]) {
-        // local variables
-        double fmodBxy = 0.0;  // modulus of the x, y magnetometer readings
-
-        // compute the magnitude of the horizontal (x and y) magnetometer reading
-        fmodBxy = std::sqrt(fBc[0] * fBc[0] + fBc[1] * fBc[1]);
-
-        // check for zero field special case where no solution is possible
-        if (fmodBxy == 0.0F) {
-            f3x3matrixAeqI(fR);
-            return;
-        }
-
-        // define the fixed entries in the z row and column
-        fR[2][0] = fR[2][1] = fR[0][2] = fR[1][2] = 0.0F;
-        fR[2][2]                                  = 1.0F;
-
-        // define the remaining entries
-        fR[0][0] = fR[1][1] = fBc[1] / fmodBxy;
-        fR[0][1]            = fBc[0] / fmodBxy;
-        fR[1][0]            = -fR[0][1];
-    }
-
-    // Windows 8 magnetometer 3DOF flat eCompass function computing rotation matrix fR
-    void f3DOFMagnetometerMatrixWin8(double fR[][3], double fBc[]) {
-        // call the Android function since it is identical to the Windows 8 matrix
-        f3DOFMagnetometerMatrixAndroid(fR, fBc);
-    }
-
     // extract the NED angles in degrees from the NED rotation matrix
-    void fNEDAnglesDegFromRotationMatrix(double R[][3],
+    void fNEDAnglesDegFromRotationMatrix(Eigen::Matrix<double, 3, 3>& R,
                                          double& pfPhiDeg,
                                          double& pfTheDeg,
                                          double& pfPsiDeg,
                                          double& pfRhoDeg,
                                          double& pfChiDeg) {
         // calculate the pitch angle -90.0 <= Theta <= 90.0 deg
-        pfTheDeg = asin_deg(-R[0][2]);
+        pfTheDeg = asin_deg(-R(0, 2));
 
         // calculate the roll angle range -180.0 <= Phi < 180.0 deg
-        pfPhiDeg = atan2_deg(R[1][2], R[2][2]);
+        pfPhiDeg = atan2_deg(R(1, 2), R(2, 2));
 
         // map +180 roll onto the functionally equivalent -180 deg roll
         if (pfPhiDeg == 180.0) {
@@ -258,15 +203,15 @@ namespace filter::orientation {
         // calculate the yaw (compass) angle 0.0 <= Psi < 360.0 deg
         if (pfTheDeg == 90.0F) {
             // vertical upwards gimbal lock case
-            pfPsiDeg = atan2_deg(R[2][1], R[1][1]) + pfPhiDeg;
+            pfPsiDeg = atan2_deg(R(2, 1), R(1, 1)) + pfPhiDeg;
         }
         else if (pfTheDeg == -90.0F) {
             // vertical downwards gimbal lock case
-            pfPsiDeg = atan2_deg(-R[2][1], R[1][1]) - pfPhiDeg;
+            pfPsiDeg = atan2_deg(-R(2, 1), R(1, 1)) - pfPhiDeg;
         }
         else {
             // general case
-            pfPsiDeg = atan2_deg(R[0][1], R[0][0]);
+            pfPsiDeg = atan2_deg(R(0, 1), R(0, 0));
         }
 
         // map yaw angle Psi onto range 0.0 <= Psi < 360.0 deg
@@ -283,21 +228,21 @@ namespace filter::orientation {
         pfRhoDeg = pfPsiDeg;
 
         // calculate the tilt angle from vertical Chi (0 <= Chi <= 180 deg)
-        pfChiDeg = acos_deg(R[2][2]);
+        pfChiDeg = acos_deg(R(2, 2));
     }
 
     // extract the Android angles in degrees from the Android rotation matrix
-    void fAndroidAnglesDegFromRotationMatrix(double R[][3],
+    void fAndroidAnglesDegFromRotationMatrix(Eigen::Matrix<double, 3, 3>& R,
                                              double& pfPhiDeg,
                                              double& pfTheDeg,
                                              double& pfPsiDeg,
                                              double& pfRhoDeg,
                                              double& pfChiDeg) {
         // calculate the roll angle -90.0 <= Phi <= 90.0 deg
-        pfPhiDeg = asin_deg(R[0][2]);
+        pfPhiDeg = asin_deg(R(0, 2));
 
         // calculate the pitch angle -180.0 <= The < 180.0 deg
-        pfTheDeg = atan2_deg(-R[1][2], R[2][2]);
+        pfTheDeg = atan2_deg(-R(1, 2), R(2, 2));
 
         // map +180 pitch onto the functionally equivalent -180 deg pitch
         if (pfTheDeg == 180.0F) {
@@ -307,15 +252,15 @@ namespace filter::orientation {
         // calculate the yaw (compass) angle 0.0 <= Psi < 360.0 deg
         if (pfPhiDeg == 90.0F) {
             // vertical downwards gimbal lock case
-            pfPsiDeg = atan2_deg(R[1][0], R[1][1]) - pfTheDeg;
+            pfPsiDeg = atan2_deg(R(1, 0), R(1, 1)) - pfTheDeg;
         }
         else if (pfPhiDeg == -90.0F) {
             // vertical upwards gimbal lock case
-            pfPsiDeg = atan2_deg(R[1][0], R[1][1]) + pfTheDeg;
+            pfPsiDeg = atan2_deg(R(1, 0), R(1, 1)) + pfTheDeg;
         }
         else {
             // // general case
-            pfPsiDeg = atan2_deg(-R[0][1], R[0][0]);
+            pfPsiDeg = atan2_deg(-R(0, 1), R(0, 0));
         }
 
         // map yaw angle Psi onto range 0.0 <= Psi < 360.0 deg
@@ -333,19 +278,19 @@ namespace filter::orientation {
         pfRhoDeg = pfPsiDeg;
 
         // calculate the tilt angle from vertical Chi (0 <= Chi <= 180 deg)
-        pfChiDeg = acos_deg(R[2][2]);
+        pfChiDeg = acos_deg(R(2, 2));
     }
 
     // extract the Windows 8 angles in degrees from the Windows 8 rotation matrix
-    void fWin8AnglesDegFromRotationMatrix(double R[][3],
+    void fWin8AnglesDegFromRotationMatrix(Eigen::Matrix<double, 3, 3>& R,
                                           double& pfPhiDeg,
                                           double& pfTheDeg,
                                           double& pfPsiDeg,
                                           double& pfRhoDeg,
                                           double& pfChiDeg) {
         // calculate the roll angle -90.0 <= Phi <= 90.0 deg
-        if (R[2][2] == 0.0F) {
-            if (R[0][2] >= 0.0F) {
+        if (R(2, 2) == 0.0F) {
+            if (R(0, 2) >= 0.0F) {
                 // tan(phi) is -infinity
                 pfPhiDeg = -90.0F;
             }
@@ -356,15 +301,15 @@ namespace filter::orientation {
         }
         else {
             // general case
-            pfPhiDeg = atan_deg(-R[0][2] / R[2][2]);
+            pfPhiDeg = atan_deg(-R(0, 2) / R(2, 2));
         }
 
         // first calculate the pitch angle The in the range -90.0 <= The <= 90.0 deg
-        pfTheDeg = asin_deg(R[1][2]);
+        pfTheDeg = asin_deg(R(1, 2));
 
-        // use R[2][2]=cos(Phi)*cos(The) to correct the quadrant of The remembering
-        // cos(Phi) is non-negative so that cos(The) has the same sign as R[2][2].
-        if (R[2][2] < 0.0F) {
+        // use R(2,2)=cos(Phi)*cos(The) to correct the quadrant of The remembering
+        // cos(Phi) is non-negative so that cos(The) has the same sign as R(2,2).
+        if (R(2, 2) < 0.0F) {
             // wrap The around +90 deg and -90 deg giving result 90 to 270 deg
             pfTheDeg = 180.0F - pfTheDeg;
         }
@@ -377,15 +322,15 @@ namespace filter::orientation {
         // calculate the yaw angle Psi
         if (pfTheDeg == 90.0F) {
             // vertical upwards gimbal lock case: -270 <= Psi < 90 deg
-            pfPsiDeg = atan2_deg(R[0][1], R[0][0]) - pfPhiDeg;
+            pfPsiDeg = atan2_deg(R(0, 1), R(0, 0)) - pfPhiDeg;
         }
         else if (pfTheDeg == -90.0F) {
             // vertical downwards gimbal lock case: -270 <= Psi < 90 deg
-            pfPsiDeg = atan2_deg(R[0][1], R[0][0]) + pfPhiDeg;
+            pfPsiDeg = atan2_deg(R(0, 1), R(0, 0)) + pfPhiDeg;
         }
         else {
             // general case: -180 <= Psi < 180 deg
-            pfPsiDeg = atan2_deg(-R[1][0], R[1][1]);
+            pfPsiDeg = atan2_deg(-R(1, 0), R(1, 1));
 
             // correct the quadrant for Psi using the value of The (deg) to give -180 <= Psi < 380 deg
             if (std::fabs(pfTheDeg) >= 90.0F) {
@@ -412,11 +357,13 @@ namespace filter::orientation {
         }
 
         // calculate the tilt angle from vertical Chi (0 <= Chi <= 180 deg)
-        pfChiDeg = acos_deg(R[2][2]);
+        pfChiDeg = acos_deg(R(2, 2));
     }
 
     // computes normalized rotation quaternion from a rotation vector (deg)
-    void fQuaternionFromRotationVectorDeg(Eigen::Quaternion<double>& pq, double rvecdeg[], double fscaling) {
+    void fQuaternionFromRotationVectorDeg(Eigen::Quaternion<double>& pq,
+                                          Eigen::Matrix<double, 3, 1>& rvecdeg,
+                                          double fscaling) {
         double fetadeg    = 0.0;  // rotation angle (deg)
         double fetarad    = 0.0;  // rotation angle (rad)
         double fetarad2   = 0.0;  // eta (rad)^2
@@ -480,7 +427,7 @@ namespace filter::orientation {
     }
 
     // compute the orientation quaternion from a 3x3 rotation matrix
-    void fQuaternionFromRotationMatrix(double R[][3], Eigen::Quaternion<double>& pq) {
+    void fQuaternionFromRotationMatrix(Eigen::Matrix<double, 3, 3>& R, Eigen::Quaternion<double>& pq) {
         double fq0sq    = 0.0;  // q0^2
         double recip4q0 = 0.0;  // 1/4q0
         double q1;
@@ -492,33 +439,33 @@ namespace filter::orientation {
         // the quaternion will also be normalized even if the case of small q0
 
         // get q0^2 and q0
-        fq0sq  = 0.25F * (1.0F + R[0][0] + R[1][1] + R[2][2]);
+        fq0sq  = 0.25F * (1.0F + R(0, 0) + R(1, 1) + R(2, 2));
         pq.w() = std::sqrt(std::fabs(fq0sq));
 
         // normal case when q0 is not small meaning rotation angle not near 180 deg
         if (pq.w() > SMALLQ0) {
             // calculate q1 to q3
             recip4q0 = 0.25F / pq.w();
-            q1       = recip4q0 * (R[1][2] - R[2][1]);
-            q2       = recip4q0 * (R[2][0] - R[0][2]);
-            q3       = recip4q0 * (R[0][1] - R[1][0]);
+            q1       = recip4q0 * (R(1, 2) - R(2, 1));
+            q2       = recip4q0 * (R(2, 0) - R(0, 2));
+            q3       = recip4q0 * (R(0, 1) - R(1, 0));
         }  // end of general case
         else {
             // special case of near 180 deg corresponds to nearly symmetric matrix
             // which is not numerically well conditioned for division by small q0
             // instead get absolute values of q1 to q3 from leading diagonal
-            q1 = std::sqrt(std::fabs(0.5F * (1.0F + R[0][0]) - fq0sq));
-            q2 = std::sqrt(std::fabs(0.5F * (1.0F + R[1][1]) - fq0sq));
-            q3 = std::sqrt(std::fabs(0.5F * (1.0F + R[2][2]) - fq0sq));
+            q1 = std::sqrt(std::fabs(0.5F * (1.0F + R(0, 0)) - fq0sq));
+            q2 = std::sqrt(std::fabs(0.5F * (1.0F + R(1, 1)) - fq0sq));
+            q3 = std::sqrt(std::fabs(0.5F * (1.0F + R(2, 2)) - fq0sq));
 
             // correct the signs of q1 to q3 by examining the signs of differenced off-diagonal terms
-            if ((R[1][2] - R[2][1]) < 0.0F) {
+            if ((R(1, 2) - R(2, 1)) < 0.0F) {
                 q1 = -q1;
             }
-            if ((R[2][0] - R[0][2]) < 0.0F) {
+            if ((R(2, 0) - R(0, 2)) < 0.0F) {
                 q2 = -q2;
             }
-            if ((R[0][1] - R[1][0]) < 0.0F) {
+            if ((R(0, 1) - R(1, 0)) < 0.0F) {
                 q3 = -q3;
             }
         }  // end of special case
@@ -527,7 +474,7 @@ namespace filter::orientation {
     }
 
     // compute the rotation matrix from an orientation quaternion
-    void fRotationMatrixFromQuaternion(double R[][3], Eigen::Quaternion<double>& pq) {
+    void RotationMatrixFromQuaternion(Eigen::Matrix<double, 3, 3>& R, Eigen::Quaternion<double>& pq) {
         double f2q                                  = 0.0;
         double f2q0q0                               = 0.0;
         double f2q0q1                               = 0.0;
@@ -560,21 +507,21 @@ namespace filter::orientation {
         f2q3q3 = 2.0F * q3 * q3;
 
         // calculate the rotation matrix assuming the quaternion is normalized
-        R[0][0] = f2q0q0 + f2q1q1 - 1.0;
-        R[0][1] = f2q1q2 + f2q0q3;
-        R[0][2] = f2q1q3 - f2q0q2;
-        R[1][0] = f2q1q2 - f2q0q3;
-        R[1][1] = f2q0q0 + f2q2q2 - 1.0;
-        R[1][2] = f2q2q3 + f2q0q1;
-        R[2][0] = f2q1q3 + f2q0q2;
-        R[2][1] = f2q2q3 - f2q0q1;
-        R[2][2] = f2q0q0 + f2q3q3 - 1.0;
+        R(0, 0) = f2q0q0 + f2q1q1 - 1.0;
+        R(0, 1) = f2q1q2 + f2q0q3;
+        R(0, 2) = f2q1q3 - f2q0q2;
+        R(1, 0) = f2q1q2 - f2q0q3;
+        R(1, 1) = f2q0q0 + f2q2q2 - 1.0;
+        R(1, 2) = f2q2q3 + f2q0q1;
+        R(2, 0) = f2q1q3 + f2q0q2;
+        R(2, 1) = f2q2q3 - f2q0q1;
+        R(2, 2) = f2q0q0 + f2q3q3 - 1.0;
 
         return;
     }
 
     // function calculate the rotation vector from a rotation matrix
-    void fRotationVectorDegFromRotationMatrix(double R[][3], double rvecdeg[]) {
+    void RotationVectorDegFromRotationMatrix(Eigen::Matrix<double, 3, 3>& R, Eigen::Matrix<double, 3, 1>& rvecdeg) {
         double ftrace;    // trace of the rotation matrix
         double fetadeg;   // rotation angle eta (deg)
         double fmodulus;  // modulus of axis * angle vector = 2|sin(eta)|
@@ -583,7 +530,7 @@ namespace filter::orientation {
         // calculate the trace of the rotation matrix = 1+2cos(eta) in range -1 to +3
         // and eta (deg) in range 0 to 180 deg inclusive
         // checking for rounding errors that might take the trace outside this range
-        ftrace = R[0][0] + R[1][1] + R[2][2];
+        ftrace = R(0, 0) + R(1, 1) + R(2, 2);
         if (ftrace >= 3.0F) {
             fetadeg = 0.0F;
         }
@@ -597,9 +544,9 @@ namespace filter::orientation {
         // set the rvecdeg vector to differences across the diagonal = 2*n*sin(eta)
         // and calculate its modulus equal to 2|sin(eta)|
         // the modulus approaches zero near 0 and 180 deg (when sin(eta) approaches zero)
-        rvecdeg[0] = R[1][2] - R[2][1];
-        rvecdeg[1] = R[2][0] - R[0][2];
-        rvecdeg[2] = R[0][1] - R[1][0];
+        rvecdeg[0] = R(1, 2) - R(2, 1);
+        rvecdeg[1] = R(2, 0) - R(0, 2);
+        rvecdeg[2] = R(0, 1) - R(1, 0);
         fmodulus   = std::sqrt(rvecdeg[0] * rvecdeg[0] + rvecdeg[1] * rvecdeg[1] + rvecdeg[2] * rvecdeg[2]);
 
         // normalize the rotation vector for general, 0 deg and 180 deg rotation cases
@@ -612,7 +559,7 @@ namespace filter::orientation {
         }                        // end of general case
         else if (ftrace >= 0.0F) {
             // near 0 deg rotation (trace = 3): matrix is nearly identity matrix
-            // R[1][2]-R[2][1]=2*nx*eta(rad) and similarly for other components
+            // R(1,2)-R(2,1)=2*nx*eta(rad) and similarly for other components
             ftmp = 0.5F * FRADTODEG;
             rvecdeg[0] *= ftmp;
             rvecdeg[1] *= ftmp;
@@ -621,16 +568,16 @@ namespace filter::orientation {
         else {
             // near 180 deg (trace = -1): matrix is nearly symmetric
             // calculate the absolute value of the components of the axis-angle vector
-            rvecdeg[0] = 180.0F * std::sqrt(std::fabs(0.5F * (R[0][0] + 1.0F)));
-            rvecdeg[1] = 180.0F * std::sqrt(std::fabs(0.5F * (R[1][1] + 1.0F)));
-            rvecdeg[2] = 180.0F * std::sqrt(std::fabs(0.5F * (R[2][2] + 1.0F)));
+            rvecdeg[0] = 180.0F * std::sqrt(std::fabs(0.5F * (R(0, 0) + 1.0F)));
+            rvecdeg[1] = 180.0F * std::sqrt(std::fabs(0.5F * (R(1, 1) + 1.0F)));
+            rvecdeg[2] = 180.0F * std::sqrt(std::fabs(0.5F * (R(2, 2) + 1.0F)));
 
             // correct the signs of the three components by examining the signs of differenced off-diagonal terms
-            if ((R[1][2] - R[2][1]) < 0.0F)
+            if ((R(1, 2) - R(2, 1)) < 0.0F)
                 rvecdeg[0] = -rvecdeg[0];
-            if ((R[2][0] - R[0][2]) < 0.0F)
+            if ((R(2, 0) - R(0, 2)) < 0.0F)
                 rvecdeg[1] = -rvecdeg[1];
-            if ((R[0][1] - R[1][0]) < 0.0F)
+            if ((R(0, 1) - R(1, 0)) < 0.0F)
                 rvecdeg[2] = -rvecdeg[2];
 
         }  // end of 180 deg case
@@ -639,7 +586,7 @@ namespace filter::orientation {
     }
 
     // computes rotation vector (deg) from rotation quaternion
-    void fRotationVectorDegFromQuaternion(Eigen::Quaternion<double>& pq, double rvecdeg[]) {
+    void RotationVectorDegFromQuaternion(Eigen::Quaternion<double>& pq, Eigen::Matrix<double, 3, 1>& rvecdeg) {
         double fetarad;     // rotation angle (rad)
         double fetadeg;     // rotation angle (deg)
         double sinhalfeta;  // sin(eta/2)
@@ -736,7 +683,7 @@ namespace filter::orientation {
         }
 
         // calculate the delta rotation vector from fdeltaqn and the virtual gyro angular velocity (deg/s)
-        fRotationVectorDegFromQuaternion(fdeltaq, rvecdeg);
+        RotationVectorDegFromQuaternion(fdeltaq, rvecdeg);
         ftmp                    = 1.0 / delta_t;
         angular_velocity_vec[0] = rvecdeg[0] * ftmp;
         angular_velocity_vec[1] = rvecdeg[1] * ftmp;

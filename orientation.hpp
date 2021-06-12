@@ -33,39 +33,36 @@
 
 namespace filter::orientation {
     // function prototypes
-    void f3DOFTiltNED(double fR[][3], double fGp[]);
-    void f3DOFTiltAndroid(double fR[][3], double fGp[]);
-    void f3DOFTiltWin8(double fR[][3], double fGp[]);
-    void f3DOFMagnetometerMatrixNED(double fR[][3], double fBc[]);
-    void f3DOFMagnetometerMatrixAndroid(double fR[][3], double fBc[]);
-    void f3DOFMagnetometerMatrixWin8(double fR[][3], double fBc[]);
-    void fNEDAnglesDegFromRotationMatrix(double R[][3],
+    void f3DOFTiltNED(Eigen::Matrix<double, 3, 3>& R, Eigen::Matrix<double, 3, 1>& fGp);
+    void f3DOFTiltAndroid(Eigen::Matrix<double, 3, 3>& R, Eigen::Matrix<double, 3, 1>& fGp);
+    void f3DOFTiltWin8(Eigen::Matrix<double, 3, 3>& R, Eigen::Matrix<double, 3, 1>& fGp);
+    void fNEDAnglesDegFromRotationMatrix(Eigen::Matrix<double, 3, 3>& R,
                                          double& pfPhiDeg,
                                          double& pfTheDeg,
                                          double& pfPsiDeg,
                                          double& pfRhoDeg,
                                          double& pfChiDeg);
-    void fAndroidAnglesDegFromRotationMatrix(double R[][3],
+    void fAndroidAnglesDegFromRotationMatrix(Eigen::Matrix<double, 3, 3>& R,
                                              double& pfPhiDeg,
                                              double& pfTheDeg,
                                              double& pfPsiDeg,
                                              double& pfRhoDeg,
                                              double& pfChiDeg);
-    void fWin8AnglesDegFromRotationMatrix(double R[][3],
+    void fWin8AnglesDegFromRotationMatrix(Eigen::Matrix<double, 3, 3>& R,
                                           double& pfPhiDeg,
                                           double& pfTheDeg,
                                           double& pfPsiDeg,
                                           double& pfRhoDeg,
                                           double& pfChiDeg);
-    void fQuaternionFromRotationMatrix(double R[][3], Eigen::Quaternion<double>& pq);
-    void fRotationMatrixFromQuaternion(double R[][3], Eigen::Quaternion<double>& pq);
+    void fQuaternionFromRotationMatrix(Eigen::Matrix<double, 3, 3>& R, Eigen::Quaternion<double>& pq);
+    void fRotationMatrixFromQuaternion(Eigen::Matrix<double, 3, 3>& R, Eigen::Quaternion<double>& pq);
     void fLPFScalar(double& pfS, double& pfLPS, double& flpf, int loopcounter);
     void qAeqBxC(Eigen::Quaternion<double>& pqA, Eigen::Quaternion<double>& pqB, Eigen::Quaternion<double>& pqC);
     void qAeqAxB(Eigen::Quaternion<double>& pqA, Eigen::Quaternion<double>& pqB);
     Eigen::Quaternion<double> qconjgAxB(Eigen::Quaternion<double>& pqA, Eigen::Quaternion<double>& pqB);
     void fqAeqNormqA(Eigen::Quaternion<double>& pqA);
     void fqAeq1(Eigen::Quaternion<double>& pqA);
-    void fRotationVectorDegFromRotationMatrix(double R[][3], double rvecdeg[]);
+    void fRotationVectorDegFromRotationMatrix(Eigen::Matrix<double, 3, 3>& R, double rvecdeg[]);
     void fQuaternionFromRotationVectorDeg(Eigen::Quaternion<double>& pq, double rvecdeg[], double fscaling);
     void fRotationVectorDegFromQuaternion(Eigen::Quaternion<double>& pq, double rvecdeg[]);
     void fLPFOrientationQuaternion(Eigen::Quaternion<double>& pq,
