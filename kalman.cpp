@@ -73,7 +73,7 @@ namespace filter::kalman {
 
         // zero a posteriori orientation, error vector xe+ (thetae+, be+, ae+) and b+
         f3x3matrixAeqI(pthisSV.posterior_rot_matrix);
-        fqAeq1(&(pthisSV.posterior_orientation_quat));
+        fqAeq1(pthisSV.posterior_orientation_quat);
         for (i = 0; i <= 2; i++) {
             pthisSV.orientation_error_deg[i] = pthisSV.gyro_offset_error[i] = pthisSV.linear_accel_error_g1[i] =
                 pthisSV.gyro_offset[i]                                      = 0.0F;
@@ -170,7 +170,7 @@ namespace filter::kalman {
             }
 
             // get the orientation quaternion from the orientation matrix
-            fQuaternionFromRotationMatrix(pthisSV.posterior_rot_matrix, &(pthisSV.posterior_orientation_quat));
+            fQuaternionFromRotationMatrix(pthisSV.posterior_rot_matrix, pthisSV.posterior_orientation_quat);
 
             // set the orientation lock flag so this initial alignment is only performed once
             pthisSV.iFirstOrientationLock = true;
@@ -213,7 +213,7 @@ namespace filter::kalman {
         // }
 
         // get the a priori rotation matrix from the a priori quaternion
-        fRotationMatrixFromQuaternion(pthisSV.prior_rotation_matrix, &(pthisSV.prior_rotation_quat));
+        fRotationMatrixFromQuaternion(pthisSV.prior_rotation_matrix, pthisSV.prior_rotation_quat);
 
         // *********************************************************************************
         // calculate a priori gyro and accelerometer estimates of the gravity vector
@@ -443,21 +443,21 @@ namespace filter::kalman {
         // *********************************************************************************
 
         // get the a posteriori delta quaternion
-        fQuaternionFromRotationVectorDeg(&(pthisSV.delta_quaternion), pthisSV.orientation_error_deg, -1.0F);
+        fQuaternionFromRotationVectorDeg(pthisSV.delta_quaternion, pthisSV.orientation_error_deg, -1.0);
 
         // compute the a posteriori orientation quaternion posterior_orientation_quat = prior_rotation_quat *
         // Deltaq(-thetae+) the resulting quaternion may have negative scalar component q0
-        qAeqBxC(&(pthisSV.posterior_orientation_quat), &(pthisSV.prior_rotation_quat), &(pthisSV.delta_quaternion));
+        qAeqBxC(pthisSV.posterior_orientation_quat, pthisSV.prior_rotation_quat, pthisSV.delta_quaternion);
 
         // normalize the a posteriori orientation quaternion to stop error propagation
         // the renormalization function ensures that the scalar component q0 is non-negative
-        fqAeqNormqA(&(pthisSV.posterior_orientation_quat));
+        fqAeqNormqA(pthisSV.posterior_orientation_quat);
 
         // compute the a posteriori rotation matrix from the a posteriori quaternion
-        fRotationMatrixFromQuaternion(pthisSV.posterior_rot_matrix, &(pthisSV.posterior_orientation_quat));
+        fRotationMatrixFromQuaternion(pthisSV.posterior_rot_matrix, pthisSV.posterior_orientation_quat);
 
         // compute the rotation vector from the a posteriori quaternion
-        fRotationVectorDegFromQuaternion(&(pthisSV.posterior_orientation_quat), pthisSV.rot_vec);
+        fRotationVectorDegFromQuaternion(pthisSV.posterior_orientation_quat, pthisSV.rot_vec);
 
         // update the a posteriori gyro offset vector b+ and linear acceleration vector a+ (sensor frame)
         for (i = 0; i <= 2; i++) {
@@ -474,29 +474,29 @@ namespace filter::kalman {
         if (ithisCoordSystem == NED) {
             // calculate the NED Euler angles
             fNEDAnglesDegFromRotationMatrix(pthisSV.posterior_rot_matrix,
-                                            &(pthisSV.roll_deg),
-                                            &(pthisSV.pitch_deg),
-                                            &(pthisSV.yaw_deg),
-                                            &(pthisSV.compass_deg),
-                                            &(pthisSV.tilt_deg));
+                                            pthisSV.roll_deg,
+                                            pthisSV.pitch_deg,
+                                            pthisSV.yaw_deg,
+                                            pthisSV.compass_deg,
+                                            pthisSV.tilt_deg);
         }
         else if (ithisCoordSystem == ANDROID) {
             // calculate the Android Euler angles
             fAndroidAnglesDegFromRotationMatrix(pthisSV.posterior_rot_matrix,
-                                                &(pthisSV.roll_deg),
-                                                &(pthisSV.pitch_deg),
-                                                &(pthisSV.yaw_deg),
-                                                &(pthisSV.compass_deg),
-                                                &(pthisSV.tilt_deg));
+                                                pthisSV.roll_deg,
+                                                pthisSV.pitch_deg,
+                                                pthisSV.yaw_deg,
+                                                pthisSV.compass_deg,
+                                                pthisSV.tilt_deg);
         }
         else {
             // calculate Win8 Euler angles
             fWin8AnglesDegFromRotationMatrix(pthisSV.posterior_rot_matrix,
-                                             &(pthisSV.roll_deg),
-                                             &(pthisSV.pitch_deg),
-                                             &(pthisSV.yaw_deg),
-                                             &(pthisSV.compass_deg),
-                                             &(pthisSV.tilt_deg));
+                                             pthisSV.roll_deg,
+                                             pthisSV.pitch_deg,
+                                             pthisSV.yaw_deg,
+                                             pthisSV.compass_deg,
+                                             pthisSV.tilt_deg);
         }
 
         // ***********************************************************************************

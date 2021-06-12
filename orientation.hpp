@@ -3,12 +3,12 @@
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-//     * Redistributions of source code must retain the above copyright
+//     & Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
+//     & Redistributions in binary form must reproduce the above copyright
 //       notice, this list of conditions and the following disclaimer in the
 //       documentation and/or other materials provided with the distribution.
-//     * Neither the name of Freescale Semiconductor, Inc. nor the
+//     & Neither the name of Freescale Semiconductor, Inc. nor the
 //       names of its contributors may be used to endorse or promote products
 //       derived from this software without specific prior written permission.
 //
@@ -39,40 +39,37 @@ namespace filter::orientation {
     void f3DOFMagnetometerMatrixNED(double fR[][3], double fBc[]);
     void f3DOFMagnetometerMatrixAndroid(double fR[][3], double fBc[]);
     void f3DOFMagnetometerMatrixWin8(double fR[][3], double fBc[]);
-    void feCompassNED(double fR[][3], double* pfDelta, double fBc[], double fGp[]);
-    void feCompassAndroid(double fR[][3], double* pfDelta, double fBc[], double fGp[]);
-    void feCompassWin8(double fR[][3], double* pfDelta, double fBc[], double fGp[]);
     void fNEDAnglesDegFromRotationMatrix(double R[][3],
-                                         double* pfPhiDeg,
-                                         double* pfTheDeg,
-                                         double* pfPsiDeg,
-                                         double* pfRhoDeg,
-                                         double* pfChiDeg);
+                                         double& pfPhiDeg,
+                                         double& pfTheDeg,
+                                         double& pfPsiDeg,
+                                         double& pfRhoDeg,
+                                         double& pfChiDeg);
     void fAndroidAnglesDegFromRotationMatrix(double R[][3],
-                                             double* pfPhiDeg,
-                                             double* pfTheDeg,
-                                             double* pfPsiDeg,
-                                             double* pfRhoDeg,
-                                             double* pfChiDeg);
+                                             double& pfPhiDeg,
+                                             double& pfTheDeg,
+                                             double& pfPsiDeg,
+                                             double& pfRhoDeg,
+                                             double& pfChiDeg);
     void fWin8AnglesDegFromRotationMatrix(double R[][3],
-                                          double* pfPhiDeg,
-                                          double* pfTheDeg,
-                                          double* pfPsiDeg,
-                                          double* pfRhoDeg,
-                                          double* pfChiDeg);
-    void fQuaternionFromRotationMatrix(double R[][3], struct fquaternion* pq);
-    void fRotationMatrixFromQuaternion(double R[][3], struct fquaternion* pq);
-    void fLPFScalar(double* pfS, double* pfLPS, double flpf, int loopcounter);
-    void qAeqBxC(struct fquaternion* pqA, struct fquaternion* pqB, struct fquaternion* pqC);
-    void qAeqAxB(struct fquaternion* pqA, struct fquaternion* pqB);
-    struct fquaternion qconjgAxB(struct fquaternion* pqA, struct fquaternion* pqB);
-    void fqAeqNormqA(struct fquaternion* pqA);
-    void fqAeq1(struct fquaternion* pqA);
+                                          double& pfPhiDeg,
+                                          double& pfTheDeg,
+                                          double& pfPsiDeg,
+                                          double& pfRhoDeg,
+                                          double& pfChiDeg);
+    void fQuaternionFromRotationMatrix(double R[][3], struct fquaternion& pq);
+    void fRotationMatrixFromQuaternion(double R[][3], struct fquaternion& pq);
+    void fLPFScalar(double& pfS, double& pfLPS, double& flpf, int loopcounter);
+    void qAeqBxC(struct fquaternion& pqA, struct fquaternion& pqB, struct fquaternion& pqC);
+    void qAeqAxB(struct fquaternion& pqA, struct fquaternion& pqB);
+    struct fquaternion qconjgAxB(struct fquaternion& pqA, struct fquaternion& pqB);
+    void fqAeqNormqA(struct fquaternion& pqA);
+    void fqAeq1(struct fquaternion& pqA);
     void fRotationVectorDegFromRotationMatrix(double R[][3], double rvecdeg[]);
-    void fQuaternionFromRotationVectorDeg(struct fquaternion* pq, double rvecdeg[], double fscaling);
-    void fRotationVectorDegFromQuaternion(struct fquaternion* pq, double rvecdeg[]);
-    void fLPFOrientationQuaternion(struct fquaternion* pq,
-                                   struct fquaternion* pLPq,
+    void fQuaternionFromRotationVectorDeg(struct fquaternion& pq, double rvecdeg[], double fscaling);
+    void fRotationVectorDegFromQuaternion(struct fquaternion& pq, double rvecdeg[]);
+    void fLPFOrientationQuaternion(struct fquaternion& pq,
+                                   struct fquaternion& pLPq,
                                    double flpf,
                                    double delta_t,
                                    double angular_velocity_vec[],
