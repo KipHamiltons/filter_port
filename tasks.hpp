@@ -32,51 +32,46 @@ namespace filter::tasks {
     struct SV_6DOF_GY_KALMAN {
         // start: elements common to all motion state vectors
         // Euler angles
-        double fPhiPl;  // roll (deg)
-        double fThePl;  // pitch (deg)
-        double fPsiPl;  // yaw (deg)
-        double fRhoPl;  // compass (deg)
-        double fChiPl;  // tilt from vertical (deg)
+        double roll_deg;     // roll (deg)
+        double pitch_deg;    // pitch (deg)
+        double yaw_deg;      // yaw (deg)
+        double compass_deg;  // compass (deg)
+        double tilt_deg;     // tilt from vertical (deg)
         // orientation matrix, quaternion and rotation vector
-        double fRPl[3][3];        // a posteriori  rotation matrix
-        struct fquaternion fqPl;  // a posteriori orientation quaternion
-        double fRVecPl[3];        // rotation vector
+        double posterior_rot_matrix[3][3];              // a posteriori  rotation matrix
+        struct fquaternion posterior_orientation_quat;  // a posteriori orientation quaternion
+        double rot_vec[3];                              // rotation vector
         // angular velocity
-        double fOmega[3];  // angular velocity (deg/s)
-        // systick timer for benchmarking
-        int systick;  // systick timer
+        double angular_velocity_vec[3];  // angular velocity (deg/s)
         // end: elements common to all motion state vectors
 
         // elements transmitted over bluetooth in kalman packet
-        double fbPl[3];      // gyro offset (deg/s)
-        double fThErrPl[3];  // orientation error (deg)
-        double fbErrPl[3];   // gyro offset error (deg/s)
+        double gyro_offset[3];            // gyro offset (deg/s)
+        double orientation_error_deg[3];  // orientation error (deg)
+        double gyro_offset_error[3];      // gyro offset error (deg/s)
         // end elements transmitted in kalman packet
 
-        double fzErrMi[3];           // angular error (deg) between a priori and eCompass
-                                     // orientations
-        double fRMi[3][3];           // a priori rotation matrix
-        struct fquaternion fqMi;     // a priori orientation quaternion
-        struct fquaternion fDeltaq;  // delta a priori or a posteriori quaternion
-        double faSePl[3];            // linear acceleration (g, sensor frame)
-        double faErrSePl[3];         // linear acceleration error (g, sensor frame)
-        double fgErrSeMi[3];         // difference (g, sensor frame) of gravity vector (accel)
-                                     // and gravity vector (gyro)
-        double fgSeGyMi[3];          // gravity vector (g, sensor frame) measurement from gyro
-        double faSeMi[3];            // linear acceleration (g, sensor frame)
-        double fQvAA;                // accelerometer terms of Qv
-        double fPPlus9x9[9][9];      // covariance matrix P+
-        double fK9x3[9][3];          // kalman filter gain matrix K
-        double fQw9x9[9][9];         // covariance matrix Qw
-        double fC3x9[3][9];          // measurement matrix C
-        double fcasq;                // FCA * FCA;
-        double fFastdeltat;          // sensor sampling interval (s) = 1 / SENSORFS
-        double fdeltat;              // kalman filter sampling interval (s) = OVERSAMPLE_RATIO /
-                                     // SENSORFS
-        double fdeltatsq;            // fdeltat * fdeltat;
-        double fQwbplusQvG;          // FQWB + FQVG;
-        int iFirstOrientationLock;   // denotes that 6DOF orientation has locked to 3DOF
-        int resetflag;               // flag to request re-initialization on next pass
+        double prior_rotation_matrix[3][3];          // a priori rotation matrix
+        struct fquaternion prior_rotation_quat;      // a priori orientation quaternion
+        struct fquaternion delta_quaternion;         // delta a priori or a posteriori quaternion
+        double linear_accel_g1[3];                   // linear acceleration (g, sensor frame)
+        double linear_accel_error_g1[3];             // linear acceleration error (g, sensor frame)
+        double gravity_accel_minus_gravity_gyro[3];  // difference (g, sensor frame) of gravity vector (accel)
+                                                     // and gravity vector (gyro)
+        double gyro_gravity_g[3];                    // gravity vector (g, sensor frame) measurement from gyro
+        double linear_accel_g2[3];                   // linear acceleration (g, sensor frame)
+        double accel_term_from_Qv;                   // accelerometer terms of Qv
+        double P_plus[9][9];                         // covariance matrix P+
+        double K[9][3];                              // kalman filter gain matrix K
+        double Qw[9][9];                             // covariance matrix Qw
+        double C[3][9];                              // measurement matrix C
+        double FCA_squared;                          // FCA * FCA;
+        static constexpr double DELTA_T = OVERSAMPLE_RATIO / SENSORFS;  // kalman filter sampling interval (s) =
+                                                                        // OVERSAMPLE_RATIO / SENSORFS
+        static constexpr double DELTA_T_SQUARED = DELTA_T * DELTA_T;    // DELTA_T * DELTA_T;
+        double FQWB_plus_FQVG;                                          // FQWB + FQVG;
+        bool iFirstOrientationLock;  // denotes that 6DOF orientation has locked to 3DOF
+        bool resetflag;              // flag to request re-initialization on next pass
     };
 
     // globals defined in tasks_func.c declared here for use elsewhere
@@ -84,13 +79,5 @@ namespace filter::tasks {
     extern struct GyroSensor thisGyro;
     extern struct SV_6DOF_GY_KALMAN thisSV_6DOF_GY_KALMAN;
 
-    // function prototypes for functions in tasks_func.c
-    void ApplyAccelHAL(struct AccelSensor* pthisAccel);
-    void ApplyMagHAL(struct MagSensor* pthisMag);
-    void ApplyGyroHAL(struct GyroSensor* pthisGyro, int irow);
-    void RdSensData_Init();
-    void RdSensData_Run();
-    void Fusion_Init();
-    void Fusion_Run();
 }  // namespace filter::tasks
 #endif  // #ifndef TASKS_HPP

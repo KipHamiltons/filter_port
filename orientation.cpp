@@ -855,8 +855,8 @@ namespace filter::orientation {
     void fLPFOrientationQuaternion(struct fquaternion* pq,
                                    struct fquaternion* pLPq,
                                    double flpf,
-                                   double fdeltat,
-                                   double fOmega[],
+                                   double delta_t,
+                                   double angular_velocity_vec[],
                                    int loopcounter) {
         // local variables
         struct fquaternion fdeltaq;  // delta rotation quaternion
@@ -902,10 +902,10 @@ namespace filter::orientation {
 
         // calculate the delta rotation vector from fdeltaqn and the virtual gyro angular velocity (deg/s)
         fRotationVectorDegFromQuaternion(&fdeltaq, rvecdeg);
-        ftmp      = 1.0F / fdeltat;
-        fOmega[0] = rvecdeg[0] * ftmp;
-        fOmega[1] = rvecdeg[1] * ftmp;
-        fOmega[2] = rvecdeg[2] * ftmp;
+        ftmp                    = 1.0F / delta_t;
+        angular_velocity_vec[0] = rvecdeg[0] * ftmp;
+        angular_velocity_vec[1] = rvecdeg[1] * ftmp;
+        angular_velocity_vec[2] = rvecdeg[2] * ftmp;
 
         // set LPq[n] = LPq[n-1] . deltaq[n]
         qAeqAxB(pLPq, &fdeltaq);

@@ -72,28 +72,4 @@ struct fquaternion {
     double q3;  // z vector component
 };
 
-// We only care about fGpFast[3], so we'll just use that instead of this struct
-
-// // accelerometer sensor structure definition
-// struct AccelSensor {
-//     int iSumGpFast[3];  // sum of fast measurements
-//     double fGpFast[3];     // fast (typically 200Hz) readings (g)
-//     double fGp[3];         // slow (typically 25Hz) averaged readings (g)
-//     double fgPerCount;     // initialized to FGPERCOUNT
-//     int iGpFast[3];     // fast (typically 200Hz) readings
-//     int iGp[3];         // slow (typically 25Hz) averaged readings (counts)
-// };
-
-// For OVERSAMPLE_RATIO A.K.A. DECIMATION_FACTOR=1, we only care about fYp[3].
-// For higher oversample ratio, we care about iYpFast.
-
-// // gyro sensor structure definition
-// struct GyroSensor {
-//     int iSumYpFast[3];                 // sum of fast measurements
-//     double fYp[3];                        // raw gyro sensor output (deg/s)
-//     double fDegPerSecPerCount;            // initialized to FDEGPERSECPERCOUNT
-//     int iYpFast[OVERSAMPLE_RATIO][3];  // fast (typically 200Hz) readings
-//     int iYp[3];                        // averaged gyro sensor output (counts)
-// };
-
 #endif  // BUILD_HPP

@@ -71,8 +71,8 @@ namespace filter::orientation {
     void fLPFOrientationQuaternion(struct fquaternion* pq,
                                    struct fquaternion* pLPq,
                                    double flpf,
-                                   double fdeltat,
-                                   double fOmega[],
+                                   double delta_t,
+                                   double angular_velocity_vec[],
                                    int loopcounter);
 }  // namespace filter::orientation
 #endif  // #ifndef ORIENTATION_HPP

@@ -77,7 +77,7 @@ int main() {
                                             gyro_reading.data(),
                                             COORDINATE_SYSTEM,
                                             DECIMATION_FACTOR);
-        fquaternion q = filter.fqPl;
+        fquaternion q = filter.posterior_orientation_quat;
         Eigen::Quaternion<double> orientation{};
         orientation.w()   = q.q0;
         orientation.vec() = Eigen::Vector3d(q.q1, q.q2, q.q3);
