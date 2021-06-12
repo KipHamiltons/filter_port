@@ -58,7 +58,7 @@ int main() {
     static constexpr int DECIMATION_FACTOR = 1;
 
     // Initialise the filter
-    filter::kalman::fInit_6DOF_GY_KALMAN(&filter, SAMPLE_RATE, DECIMATION_FACTOR);
+    filter::kalman::fInit_6DOF_GY_KALMAN(filter, SAMPLE_RATE, DECIMATION_FACTOR);
 
     // The output quaternions
     std::vector<Eigen::Quaternion<double>> orientations{};
@@ -72,7 +72,7 @@ int main() {
         // gyro_reading[1]   = gyro_reading[1] * M_PI / 180.0f;
         // gyro_reading[2]   = gyro_reading[2] * M_PI / 180.0f;
 
-        filter::kalman::fRun_6DOF_GY_KALMAN(&filter,
+        filter::kalman::fRun_6DOF_GY_KALMAN(filter,
                                             acc_reading.data(),
                                             gyro_reading.data(),
                                             COORDINATE_SYSTEM,
