@@ -50,6 +50,7 @@ namespace filter::kalman {
     // 6DOF Kalman filter accelerometer and gyroscope state vector structure
 
     class OrientationFilter {
+    public:
         // start: elements common to all motion state vectors
         // Euler angles
         float fPhiPl;  // roll (deg)

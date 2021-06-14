@@ -8,8 +8,8 @@
 #include <numeric>
 #include <vector>
 
+#include "OrientationFilter.hpp"
 #include "build.hpp"
-#include "kalman.hpp"
 #include "stdio.h"
 
 int main() {
@@ -51,14 +51,14 @@ int main() {
     std::cout << "Found " << acc_readings.size() << " accelerometer readings" << std::endl;
     std::cout << "Found " << quaternions.size() << " ground-truth quaternions" << std::endl;
 
-    struct filter::tasks::SV_6DOF_GY_KALMAN filter {};
+    filter::kalman::OrientationFilter filter{};
     // TODO clarify coord system
     static constexpr int16 COORDINATE_SYSTEM = ANDROID;
     static constexpr int16 SAMPLE_RATE       = 200;
     static constexpr int16 DECIMATION_FACTOR = 1;
 
     // Initialise the filter
-    filter::kalman::fInit_6DOF_GY_KALMAN(&filter, SAMPLE_RATE, DECIMATION_FACTOR);
+    filter.init_filter(SAMPLE_RATE, DECIMATION_FACTOR);
 
     // The output quaternions
     std::vector<Eigen::Quaternion<float>> orientations{};
@@ -72,11 +72,7 @@ int main() {
         // gyro_reading[1]   = gyro_reading[1] * M_PI / 180.0f;
         // gyro_reading[2]   = gyro_reading[2] * M_PI / 180.0f;
 
-        filter::kalman::fRun_6DOF_GY_KALMAN(&filter,
-                                            acc_reading.data(),
-                                            gyro_reading.data(),
-                                            COORDINATE_SYSTEM,
-                                            DECIMATION_FACTOR);
+        filter.run_filter(acc_reading.data(), gyro_reading.data(), COORDINATE_SYSTEM, DECIMATION_FACTOR);
         fquaternion q = filter.fqPl;
         Eigen::Quaternion<float> orientation{};
         orientation.w()   = q.q0;
