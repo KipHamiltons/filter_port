@@ -73,28 +73,29 @@ namespace filter::kalman {
         Scalar fThErrPl[3];                                    // orientation error (deg)
         Scalar fbErrPl[3];                                     // gyro offset error (deg/s)
 
-        Scalar fRMi[3][3];                  // a priori rotation matrix
-        Eigen::Quaternion<Scalar> fqMi;     // a priori orientation quaternion
-        Eigen::Quaternion<Scalar> fDeltaq;  // delta a priori or a posteriori quaternion
-        Scalar faSePl[3];                   // linear acceleration (g, sensor frame)
-        Scalar faErrSePl[3];                // linear acceleration error (g, sensor frame)
-        Scalar fgErrSeMi[3];                // difference (g, sensor frame) of gravity vector (accel)
-                                            // and gravity vector (gyro)
-        Scalar fgSeGyMi[3];                 // gravity vector (g, sensor frame) measurement from gyro
-        Scalar faSeMi[3];                   // linear acceleration (g, sensor frame)
-        Scalar fQvAA;                       // accelerometer terms of Qv
-        Scalar fPPlus9x9[9][9];             // covariance matrix P+
-        Scalar fK9x3[9][3];                 // kalman filter gain matrix K
-        Scalar fQw9x9[9][9];                // covariance matrix Qw
-        Scalar fC3x9[3][9];                 // measurement matrix C
-        Scalar fcasq;                       // FCA * FCA;
-        Scalar fFastdeltat;                 // sensor sampling interval (s) = 1 / SENSORFS
-        Scalar fdeltat;                     // kalman filter sampling interval (s) = OVERSAMPLE_RATIO /
-                                            // SENSORFS
-        Scalar fdeltatsq;                   // fdeltat * fdeltat;
-        Scalar fQwbplusQvG;                 // FQWB + FQVG;
-        int iFirstOrientationLock;          // denotes that 6DOF orientation has locked to 3DOF
-        int resetflag;                      // flag to request re-initialization on next pass
+        Scalar fRMi[3][3];               // a priori rotation matrix
+        Eigen::Quaternion<Scalar> fqMi;  // a priori orientation quaternion
+        Eigen::Quaternion<Scalar> fDeltaq =
+            Eigen::Quaternion<Scalar>::Identity();  // delta a priori or a posteriori quaternion
+        Scalar faSePl[3];                           // linear acceleration (g, sensor frame)
+        Scalar faErrSePl[3];                        // linear acceleration error (g, sensor frame)
+        Scalar fgErrSeMi[3];                        // difference (g, sensor frame) of gravity vector (accel)
+                                                    // and gravity vector (gyro)
+        Scalar fgSeGyMi[3];                         // gravity vector (g, sensor frame) measurement from gyro
+        Scalar faSeMi[3];                           // linear acceleration (g, sensor frame)
+        Scalar fQvAA;                               // accelerometer terms of Qv
+        Scalar fPPlus9x9[9][9];                     // covariance matrix P+
+        Scalar fK9x3[9][3];                         // kalman filter gain matrix K
+        Scalar fQw9x9[9][9];                        // covariance matrix Qw
+        Scalar fC3x9[3][9];                         // measurement matrix C
+        Scalar fcasq;                               // FCA * FCA;
+        Scalar fFastdeltat;                         // sensor sampling interval (s) = 1 / SENSORFS
+        Scalar fdeltat;                             // kalman filter sampling interval (s) = OVERSAMPLE_RATIO /
+                                                    // SENSORFS
+        Scalar fdeltatsq;                           // fdeltat * fdeltat;
+        Scalar fQwbplusQvG;                         // FQWB + FQVG;
+        int iFirstOrientationLock;                  // denotes that 6DOF orientation has locked to 3DOF
+        int resetflag;                              // flag to request re-initialization on next pass
 
         void init_filter(int iSensorFS, int iOverSampleRatio) {
             int i, j;  // loop counters

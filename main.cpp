@@ -68,9 +68,9 @@ int main() {
         auto gyro_reading = gyro_readings[t];
         // The data is expected to be in deg,
         // but converting it doesn't change the result??
-        // gyro_reading[0]   = gyro_reading[0] * M_PI / 180.0f;
-        // gyro_reading[1]   = gyro_reading[1] * M_PI / 180.0f;
-        // gyro_reading[2]   = gyro_reading[2] * M_PI / 180.0f;
+        // gyro_reading[0] = gyro_reading[0] * M_PI / 180.0f;
+        // gyro_reading[1] = gyro_reading[1] * M_PI / 180.0f;
+        // gyro_reading[2] = gyro_reading[2] * M_PI / 180.0f;
 
         filter.run_filter(acc_reading.data(), gyro_reading.data(), COORDINATE_SYSTEM, DECIMATION_FACTOR);
 
