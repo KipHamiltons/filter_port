@@ -12,7 +12,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
   endif()
 endif()
 
-set(src main.cpp matrix.cpp orientation.cpp OrientationFilter.cpp)
+set(src main.cpp)
 
 add_executable(filter_test ${src})
 

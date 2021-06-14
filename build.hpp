@@ -47,25 +47,25 @@ static constexpr int Y = 1;
 static constexpr int Z = 2;
 
 // useful multiplicative conversion constants
-static constexpr float PI           = 3.141592654F;       // Pi
-static constexpr float FDEGTORAD    = 0.01745329251994F;  // degrees to radians conversion = pi / 180
-static constexpr float FRADTODEG    = 57.2957795130823F;  // radians to degrees conversion = 180 / pi
-static constexpr float FRECIP180    = 0.0055555555555F;   // multiplicative factor 1/180
-static constexpr float ONETHIRD     = 0.33333333F;        // one third
-static constexpr float ONESIXTH     = 0.166666667F;       // one sixth
-static constexpr float ONETWELFTH   = 0.0833333333F;      // one twelfth
-static constexpr float ONEOVER48    = 0.02083333333F;     // 1 / 48
-static constexpr float ONEOVER120   = 0.0083333333F;      // 1 / 120
-static constexpr float ONEOVER3840  = 0.0002604166667F;   // 1 / 3840
-static constexpr float ONEOVERROOT2 = 0.707106781F;       // 1/sqrt(2)
-static constexpr float ROOT3OVER2   = 0.866025403784F;    // sqrt(3)/2
+static constexpr double PI           = 3.141592654;       // Pi
+static constexpr double FDEGTORAD    = 0.01745329251994;  // degrees to radians conversion = pi / 180
+static constexpr double FRADTODEG    = 57.2957795130823;  // radians to degrees conversion = 180 / pi
+static constexpr double FRECIP180    = 0.0055555555555;   // multiplicative factor 1/180
+static constexpr double ONETHIRD     = 0.33333333;        // one third
+static constexpr double ONESIXTH     = 0.166666667;       // one sixth
+static constexpr double ONETWELFTH   = 0.0833333333;      // one twelfth
+static constexpr double ONEOVER48    = 0.02083333333;     // 1 / 48
+static constexpr double ONEOVER120   = 0.0083333333;      // 1 / 120
+static constexpr double ONEOVER3840  = 0.0002604166667;   // 1 / 3840
+static constexpr double ONEOVERROOT2 = 0.707106781;       // 1/sqrt(2)
+static constexpr double ROOT3OVER2   = 0.866025403784;    // sqrt(3)/2
 
 // quaternion structure definition
 struct fquaternion {
-    float q0 = 1.0f;  // scalar component
-    float q1 = 0.0f;  // x vector component
-    float q2 = 0.0f;  // y vector component
-    float q3 = 0.0f;  // z vector component
+    double q0 = 1.0;  // scalar component
+    double q1 = 0.0;  // x vector component
+    double q2 = 0.0;  // y vector component
+    double q3 = 0.0;  // z vector component
 };
 
 #endif  // BUILD_HPP
