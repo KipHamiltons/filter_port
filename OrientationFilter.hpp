@@ -33,17 +33,13 @@
 #include "utilities.hpp"
 namespace filter::kalman {
 
-    using filter::utilities::A_eq_AxB_quat_product;
-    using filter::utilities::A_eq_BxC_quat_product;
     using filter::utilities::f3DOFTiltAndroid;
     using filter::utilities::f3DOFTiltNED;
     using filter::utilities::f3DOFTiltWin8;
-    using filter::utilities::normalise_quaternion_inplace;
     using filter::utilities::quat_from_rot_mat;
     using filter::utilities::quat_from_rot_vec;
     using filter::utilities::rot_mat_from_quat;
     using filter::utilities::set_identity3x3;
-    using filter::utilities::set_identity_quaternion;
     using filter::utilities::set_inverse_inplace;
 
     // *********************************************************************************
@@ -123,7 +119,7 @@ namespace filter::kalman {
 
             // zero a posteriori orientation, error vector xe+ (thetae+, be+, ae+) and b+
             set_identity3x3(posterior_orientation_mat);
-            set_identity_quaternion(posterior_orientation_quat);
+            posterior_orientation_quat = Eigen::Quaternion<Scalar>::Identity();
             for (i = X; i <= Z; i++) {
                 fThErrPl[i] = fbErrPl[i] = faErrSePl[i] = fbPl[i] = 0.0;
             }
@@ -237,7 +233,7 @@ namespace filter::kalman {
 
             // incrementally rotate the a priori orientation quaternion fqMi
             // the a posteriori orientation is re-normalized later so this update is stable
-            A_eq_AxB_quat_product(fqMi, fDeltaq);
+            fqMi = fqMi * fDeltaq;
 
             // get the a priori rotation matrix from the a priori quaternion
             rot_mat_from_quat(fRMi, fqMi);
@@ -464,11 +460,11 @@ namespace filter::kalman {
 
             // compute the a posteriori orientation quaternion posterior_orientation_quat = fqMi * Deltaq(-thetae+)
             // the resulting quaternion may have negative scalar component q0
-            A_eq_BxC_quat_product(posterior_orientation_quat, fqMi, fDeltaq);
+            posterior_orientation_quat = fqMi * fDeltaq;
 
             // normalize the a posteriori orientation quaternion to stop error propagation
             // the renormalization function ensures that the scalar component q0 is non-negative
-            normalise_quaternion_inplace<Scalar>(posterior_orientation_quat);
+            posterior_orientation_quat.normalize();
 
             // compute the a posteriori rotation matrix from the a posteriori quaternion
             rot_mat_from_quat(posterior_orientation_mat, posterior_orientation_quat);
