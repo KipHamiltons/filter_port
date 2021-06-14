@@ -40,9 +40,9 @@
 // #include "time.h"
 
 // compile time constants that are private to this file
-#define SMALLQ0      0.01F   // limit of quaternion scalar component requiring special algorithm
-#define CORRUPTQUAT  0.001F  // threshold for deciding rotation quaternion is corrupt
-#define SMALLMODULUS 0.01F   // limit where rounding errors may appear
+static constexpr float SMALLQ0      = 0.01F;   // limit of quaternion scalar component requiring special algorithm
+static constexpr float CORRUPTQUAT  = 0.001F;  // threshold for deciding rotation quaternion is corrupt
+static constexpr float SMALLMODULUS = 0.01F;   // limit where rounding errors may appear
 
 namespace filter::orientation {
 
@@ -60,7 +60,7 @@ namespace filter::orientation {
         // the NED self-consistency twist occurs at 90 deg pitch
 
         // local variables
-        int16 i;              // counter
+        int i;                // counter
         float fmodGxyz;       // modulus of the x, y, z accelerometer readings
         float fmodGyz;        // modulus of the y, z accelerometer readings
         float frecipmodGxyz;  // reciprocal of modulus
@@ -132,7 +132,7 @@ namespace filter::orientation {
         float fmodGxz;        // modulus of the x, z accelerometer readings
         float frecipmodGxyz;  // reciprocal of modulus
         float ftmp;           // scratch variable
-        int8 i;               // counter
+        int i;                // counter
 
         // compute the accelerometer squared magnitudes
         fmodGxz  = fGp[X] * fGp[X] + fGp[Z] * fGp[Z];
@@ -257,7 +257,7 @@ namespace filter::orientation {
         float fmodBc;   // modulus of Bc
         float fGdotBc;  // dot product of vectors G.Bc
         float ftmp;     // scratch variable
-        int8 i, j;      // loop counters
+        int i, j;       // loop counters
 
         // set the inclination angle to zero in case it is not computed later
         *pfDelta = 0.0F;
@@ -318,7 +318,7 @@ namespace filter::orientation {
         float fmodBc;   // modulus of Bc
         float fGdotBc;  // dot product of vectors G.Bc
         float ftmp;     // scratch variable
-        int8 i, j;      // loop counters
+        int i, j;       // loop counters
 
         // set the inclination angle to zero in case it is not computed later
         *pfDelta = 0.0F;
@@ -379,7 +379,7 @@ namespace filter::orientation {
         float fmodBc;   // modulus of Bc
         float fGdotBc;  // dot product of vectors G.Bc
         float ftmp;     // scratch variable
-        int8 i, j;      // loop counters
+        int i, j;       // loop counters
 
         // set the inclination angle to zero in case it is not computed later
         *pfDelta = 0.0F;
@@ -689,7 +689,7 @@ namespace filter::orientation {
                                    float flpf,
                                    float fdeltat,
                                    float fOmega[],
-                                   int32 loopcounter) {
+                                   int loopcounter) {
         // local variables
         struct fquaternion fdeltaq;  // delta rotation quaternion
         float rvecdeg[3];            // rotation vector (deg)
@@ -750,7 +750,7 @@ namespace filter::orientation {
     }
 
     // function low pass filters a scalar
-    void fLPFScalar(float* pfS, float* pfLPS, float flpf, int32 loopcounter) {
+    void fLPFScalar(float* pfS, float* pfLPS, float flpf, int loopcounter) {
         // set S[LP,n]=S[n] on first pass
         if (loopcounter == 0) {
             *pfLPS = *pfS;

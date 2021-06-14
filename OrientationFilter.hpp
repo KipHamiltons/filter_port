@@ -65,7 +65,7 @@ namespace filter::kalman {
         // angular velocity
         float fOmega[3];  // angular velocity (deg/s)
         // systick timer for benchmarking
-        int32 systick;  // systick timer
+        int systick;  // systick timer
         // end: elements common to all motion state vectors
 
         // elements transmitted over bluetooth in kalman packet
@@ -74,33 +74,33 @@ namespace filter::kalman {
         float fbErrPl[3];   // gyro offset error (deg/s)
         // end elements transmitted in kalman packet
 
-        float fzErrMi[3];             // angular error (deg) between a priori and eCompass
-                                      // orientations
-        float fRMi[3][3];             // a priori rotation matrix
-        struct fquaternion fqMi;      // a priori orientation quaternion
-        struct fquaternion fDeltaq;   // delta a priori or a posteriori quaternion
-        float faSePl[3];              // linear acceleration (g, sensor frame)
-        float faErrSePl[3];           // linear acceleration error (g, sensor frame)
-        float fgErrSeMi[3];           // difference (g, sensor frame) of gravity vector (accel)
-                                      // and gravity vector (gyro)
-        float fgSeGyMi[3];            // gravity vector (g, sensor frame) measurement from gyro
-        float faSeMi[3];              // linear acceleration (g, sensor frame)
-        float fQvAA;                  // accelerometer terms of Qv
-        float fPPlus9x9[9][9];        // covariance matrix P+
-        float fK9x3[9][3];            // kalman filter gain matrix K
-        float fQw9x9[9][9];           // covariance matrix Qw
-        float fC3x9[3][9];            // measurement matrix C
-        float fcasq;                  // FCA * FCA;
-        float fFastdeltat;            // sensor sampling interval (s) = 1 / SENSORFS
-        float fdeltat;                // kalman filter sampling interval (s) = OVERSAMPLE_RATIO /
-                                      // SENSORFS
-        float fdeltatsq;              // fdeltat * fdeltat;
-        float fQwbplusQvG;            // FQWB + FQVG;
-        int16 iFirstOrientationLock;  // denotes that 6DOF orientation has locked to 3DOF
-        int8 resetflag;               // flag to request re-initialization on next pass
+        float fzErrMi[3];            // angular error (deg) between a priori and eCompass
+                                     // orientations
+        float fRMi[3][3];            // a priori rotation matrix
+        struct fquaternion fqMi;     // a priori orientation quaternion
+        struct fquaternion fDeltaq;  // delta a priori or a posteriori quaternion
+        float faSePl[3];             // linear acceleration (g, sensor frame)
+        float faErrSePl[3];          // linear acceleration error (g, sensor frame)
+        float fgErrSeMi[3];          // difference (g, sensor frame) of gravity vector (accel)
+                                     // and gravity vector (gyro)
+        float fgSeGyMi[3];           // gravity vector (g, sensor frame) measurement from gyro
+        float faSeMi[3];             // linear acceleration (g, sensor frame)
+        float fQvAA;                 // accelerometer terms of Qv
+        float fPPlus9x9[9][9];       // covariance matrix P+
+        float fK9x3[9][3];           // kalman filter gain matrix K
+        float fQw9x9[9][9];          // covariance matrix Qw
+        float fC3x9[3][9];           // measurement matrix C
+        float fcasq;                 // FCA * FCA;
+        float fFastdeltat;           // sensor sampling interval (s) = 1 / SENSORFS
+        float fdeltat;               // kalman filter sampling interval (s) = OVERSAMPLE_RATIO /
+                                     // SENSORFS
+        float fdeltatsq;             // fdeltat * fdeltat;
+        float fQwbplusQvG;           // FQWB + FQVG;
+        int iFirstOrientationLock;   // denotes that 6DOF orientation has locked to 3DOF
+        int resetflag;               // flag to request re-initialization on next pass
 
-        void init_filter(int16 iSensorFS, int16 iOverSampleRatio);
-        void run_filter(float accel_reading[3], float gyro_reading[3], int16 ithisCoordSystem, int16 iOverSampleRatio);
+        void init_filter(int iSensorFS, int iOverSampleRatio);
+        void run_filter(float accel_reading[3], float gyro_reading[3], int ithisCoordSystem, int iOverSampleRatio);
     };
 
 }  // namespace filter::kalman

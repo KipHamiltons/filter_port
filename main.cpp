@@ -53,9 +53,9 @@ int main() {
 
     filter::kalman::OrientationFilter filter{};
     // TODO clarify coord system
-    static constexpr int16 COORDINATE_SYSTEM = ANDROID;
-    static constexpr int16 SAMPLE_RATE       = 200;
-    static constexpr int16 DECIMATION_FACTOR = 1;
+    static constexpr int COORDINATE_SYSTEM = ANDROID;
+    static constexpr int SAMPLE_RATE       = 200;
+    static constexpr int DECIMATION_FACTOR = 1;
 
     // Initialise the filter
     filter.init_filter(SAMPLE_RATE, DECIMATION_FACTOR);

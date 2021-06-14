@@ -59,7 +59,7 @@ namespace filter::orientation {
                                           float* pfChiDeg);
     void fQuaternionFromRotationMatrix(float R[][3], struct fquaternion* pq);
     void fRotationMatrixFromQuaternion(float R[][3], const struct fquaternion* pq);
-    void fLPFScalar(float* pfS, float* pfLPS, float flpf, int32 loopcounter);
+    void fLPFScalar(float* pfS, float* pfLPS, float flpf, int loopcounter);
     void qAeqBxC(struct fquaternion* pqA, const struct fquaternion* pqB, const struct fquaternion* pqC);
     void qAeqAxB(struct fquaternion* pqA, const struct fquaternion* pqB);
     struct fquaternion qconjgAxB(const struct fquaternion* pqA, const struct fquaternion* pqB);
@@ -73,6 +73,6 @@ namespace filter::orientation {
                                    float flpf,
                                    float fdeltat,
                                    float fOmega[],
-                                   int32 loopcounter);
+                                   int loopcounter);
 }  // namespace filter::orientation
 #endif  // #ifndef ORIENTATION_HPP

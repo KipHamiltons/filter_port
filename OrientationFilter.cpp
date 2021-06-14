@@ -56,8 +56,8 @@ namespace filter::kalman {
 
 
     // function initalizes the 6DOF accel + gyro Kalman filter algorithm
-    void OrientationFilter::init_filter(int16 iSensorFS, int16 iOverSampleRatio) {
-        int8 i, j;  // loop counters
+    void OrientationFilter::init_filter(int iSensorFS, int iOverSampleRatio) {
+        int i, j;  // loop counters
 
         // reset the flag denoting that a first 6DOpthisSVtion lock has been achieved
         iFirstOrientationLock = 0;
@@ -117,8 +117,8 @@ namespace filter::kalman {
     // 6DOF accel + gyro Kalman filter algorithm
     void OrientationFilter::run_filter(float accel_reading[3],
                                        float gyro_reading[3],
-                                       int16 ithisCoordSystem,
-                                       int16 iOverSampleRatio) {
+                                       int ithisCoordSystem,
+                                       int iOverSampleRatio) {
         // local arrays and scalars
         float rvec[3];         // rotation vector
         float ftmpA9x3[9][3];  // scratch array
@@ -137,13 +137,13 @@ namespace filter::kalman {
         float* pfC3x9ik;
         float* pfC3x9jk;
 
-        int8 i, j, k;  // loop counters
+        int i, j, k;  // loop counters
 
         // working arrays for 3x3 matrix inversion
         float* pfRows[3];
-        int8 iColInd[3];
-        int8 iRowInd[3];
-        int8 iPivot[3];
+        int iColInd[3];
+        int iRowInd[3];
+        int iPivot[3];
 
         // do a reset and return if requested
         if (resetflag) {

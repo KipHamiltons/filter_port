@@ -36,13 +36,13 @@
 // #include "time.h"
 
 // compile time constants that are private to this file
-#define CORRUPTMATRIX 0.001F  // column vector modulus limit for rotation matrix
+static constexpr float CORRUPTMATRIX = 0.001F;  // column vector modulus limit for rotation matrix
 
 namespace filter::matrix {
     // function sets the 3x3 matrix A to the identity matrix
     void f3x3matrixAeqI(float A[][3]) {
         float* pAij;  // pointer to A[i][j]
-        int8 i, j;    // loop counters
+        int i, j;     // loop counters
 
         for (i = 0; i < 3; i++) {
             // set pAij to &A[i][j=0]
@@ -56,11 +56,11 @@ namespace filter::matrix {
     }
 
     // function sets the matrix A to the identity matrix
-    void fmatrixAeqI(float* A[], int16 rc) {
+    void fmatrixAeqI(float* A[], int rc) {
         // rc = rows and columns in A
 
         float* pAij;  // pointer to A[i][j]
-        int8 i, j;    // loop counters
+        int i, j;     // loop counters
 
         for (i = 0; i < rc; i++) {
             // set pAij to &A[i][j=0]
@@ -76,7 +76,7 @@ namespace filter::matrix {
     // function sets every entry in the 3x3 matrix A to a constant scalar
     void f3x3matrixAeqScalar(float A[][3], float Scalar) {
         float* pAij;  // pointer to A[i][j]
-        int8 i, j;    // counters
+        int i, j;     // counters
 
         for (i = 0; i < 3; i++) {
             // set pAij to &A[i][j=0]
@@ -91,7 +91,7 @@ namespace filter::matrix {
     // function multiplies all elements of 3x3 matrix A by the specified scalar
     void f3x3matrixAeqAxScalar(float A[][3], float Scalar) {
         float* pAij;  // pointer to A[i][j]
-        int8 i, j;    // loop counters
+        int i, j;     // loop counters
 
         for (i = 0; i < 3; i++) {
             // set pAij to &A[i][j=0]
@@ -107,7 +107,7 @@ namespace filter::matrix {
     // function negates all elements of 3x3 matrix A
     void f3x3matrixAeqMinusA(float A[][3]) {
         float* pAij;  // pointer to A[i][j]
-        int8 i, j;    // loop counters
+        int i, j;     // loop counters
 
         for (i = 0; i < 3; i++) {
             // set pAij to &A[i][j=0]
@@ -166,9 +166,9 @@ namespace filter::matrix {
     // eigval[0..n-1] returns the eigenvalues of A[][].
     // eigvec[0..n-1][0..n-1] returns the normalized eigenvectors of A[][]
     // the eigenvectors are not sorted by value
-    void eigencompute(float A[][10], float eigval[], float eigvec[][10], int8 n) {
+    void eigencompute(float A[][10], float eigval[], float eigvec[][10], int n) {
         // maximum number of iterations to achieve convergence: in practice 6 is typical
-#define NITERATIONS 15
+        static constexpr int NITERATIONS = 15;
 
         // various trig functions of the jacobi rotation angle phi
         float cot2phi, tanhalfphi, tanphi, sinphi, cosphi;
@@ -177,11 +177,11 @@ namespace filter::matrix {
         // residue from remaining non-zero above diagonal terms
         float residue;
         // matrix row and column indices
-        int8 ir, ic;
+        int ir, ic;
         // general loop counter
-        int8 j;
+        int j;
         // timeout ctr for number of passes of the algorithm
-        int8 ctr;
+        int ctr;
 
         // initialize eigenvectors matrix and eigenvalues array
         for (ir = 0; ir < n; ir++) {
@@ -297,13 +297,13 @@ namespace filter::matrix {
 
     // function uses Gauss-Jordan elimination to compute the inverse of matrix A in situ
     // on exit, A is replaced with its inverse
-    void fmatrixAeqInvA(float* A[], int8 iColInd[], int8 iRowInd[], int8 iPivot[], int8 isize) {
-        float largest;              // largest element used for pivoting
-        float scaling;              // scaling factor in pivoting
-        float recippiv;             // reciprocal of pivot element
-        float ftmp;                 // temporary variable used in swaps
-        int8 i, j, k, l, m;         // index counters
-        int8 iPivotRow, iPivotCol;  // row and column of pivot element
+    void fmatrixAeqInvA(float* A[], int iColInd[], int iRowInd[], int iPivot[], int isize) {
+        float largest;             // largest element used for pivoting
+        float scaling;             // scaling factor in pivoting
+        float recippiv;            // reciprocal of pivot element
+        float ftmp;                // temporary variable used in swaps
+        int i, j, k, l, m;         // index counters
+        int iPivotRow, iPivotCol;  // row and column of pivot element
 
         // to avoid compiler warnings
         iPivotRow = iPivotCol = 0;
