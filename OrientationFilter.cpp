@@ -28,14 +28,13 @@
 // is extremely complex, and it will be very easy (almost inevitable) that you screw
 // it up.
 //
-#include "kalman.hpp"
+#include "OrientationFilter.hpp"
 
 #include <cmath>
 
 #include "build.hpp"
 #include "matrix.hpp"
 #include "orientation.hpp"
-#include "tasks.hpp"
 
 namespace filter::kalman {
     using filter::matrix::f3x3matrixAeqI;
@@ -57,74 +56,69 @@ namespace filter::kalman {
 
 
     // function initalizes the 6DOF accel + gyro Kalman filter algorithm
-    void fInit_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN* pthisSV,
-                              int16 iSensorFS,
-                              int16 iOverSampleRatio) {
+    void OrientationFilter::init_filter(int16 iSensorFS, int16 iOverSampleRatio) {
         int8 i, j;  // loop counters
 
         // reset the flag denoting that a first 6DOpthisSVtion lock has been achieved
-        pthisSV->iFirstOrientationLock = 0;
+        iFirstOrientationLock = 0;
 
         // compute and store useful product terms to save floating point calculations later
-        pthisSV->fFastdeltat = 1.0F / (float) iSensorFS;
-        pthisSV->fdeltat     = (float) iOverSampleRatio * pthisSV->fFastdeltat;
-        pthisSV->fdeltatsq   = pthisSV->fdeltat * pthisSV->fdeltat;
-        pthisSV->fcasq       = FCA_6DOF_GY_KALMAN * FCA_6DOF_GY_KALMAN;
-        pthisSV->fQwbplusQvG = FQWB_6DOF_GY_KALMAN + FQVG_6DOF_GY_KALMAN;
+        fFastdeltat = 1.0F / (float) iSensorFS;
+        fdeltat     = (float) iOverSampleRatio * fFastdeltat;
+        fdeltatsq   = fdeltat * fdeltat;
+        fcasq       = FCA_6DOF_GY_KALMAN * FCA_6DOF_GY_KALMAN;
+        fQwbplusQvG = FQWB_6DOF_GY_KALMAN + FQVG_6DOF_GY_KALMAN;
 
         // initialize the fixed entries in the measurement matrix C
         for (i = 0; i < 3; i++) {
             for (j = 0; j < 9; j++) {
-                pthisSV->fC3x9[i][j] = 0.0F;
+                fC3x9[i][j] = 0.0F;
             }
         }
-        pthisSV->fC3x9[0][6] = pthisSV->fC3x9[1][7] = pthisSV->fC3x9[2][8] = 1.0F;
+        fC3x9[0][6] = fC3x9[1][7] = fC3x9[2][8] = 1.0F;
 
         // zero a posteriori orientation, error vector xe+ (thetae+, be+, ae+) and b+
-        f3x3matrixAeqI(pthisSV->fRPl);
-        fqAeq1(&(pthisSV->fqPl));
+        f3x3matrixAeqI(fRPl);
+        fqAeq1(&(fqPl));
         for (i = X; i <= Z; i++) {
-            pthisSV->fThErrPl[i] = pthisSV->fbErrPl[i] = pthisSV->faErrSePl[i] = pthisSV->fbPl[i] = 0.0F;
+            fThErrPl[i] = fbErrPl[i] = faErrSePl[i] = fbPl[i] = 0.0F;
         }
 
         // initialize noise variance for Qv and Qw matrix updates
-        pthisSV->fQvAA = FQVA_6DOF_GY_KALMAN + FQWA_6DOF_GY_KALMAN
-                         + FDEGTORAD * FDEGTORAD * pthisSV->fdeltatsq * (FQWB_6DOF_GY_KALMAN + FQVG_6DOF_GY_KALMAN);
+        fQvAA = FQVA_6DOF_GY_KALMAN + FQWA_6DOF_GY_KALMAN
+                + FDEGTORAD * FDEGTORAD * fdeltatsq * (FQWB_6DOF_GY_KALMAN + FQVG_6DOF_GY_KALMAN);
 
         // initialize the 6x6 noise covariance matrix Qw of the a priori error vector xe-
         // Qw is then recursively updated as P+ = (1 - K * C) * P- = (1 - K * C) * Qw  and Qw updated from P+
         // zero the matrix Qw
         for (i = 0; i < 9; i++) {
             for (j = 0; j < 9; j++) {
-                pthisSV->fQw9x9[i][j] = 0.0F;
+                fQw9x9[i][j] = 0.0F;
             }
         }
         // loop over non-zero values
         for (i = 0; i < 3; i++) {
             // theta_e * theta_e terms
-            pthisSV->fQw9x9[i][i] = FQWINITTHTH_6DOF_GY_KALMAN;
+            fQw9x9[i][i] = FQWINITTHTH_6DOF_GY_KALMAN;
             // b_e * b_e terms
-            pthisSV->fQw9x9[i + 3][i + 3] = FQWINITBB_6DOF_GY_KALMAN;
+            fQw9x9[i + 3][i + 3] = FQWINITBB_6DOF_GY_KALMAN;
             // th_e * b_e terms
-            pthisSV->fQw9x9[i][i + 3] = pthisSV->fQw9x9[i + 3][i] = FQWINITTHB_6DOF_GY_KALMAN;
+            fQw9x9[i][i + 3] = fQw9x9[i + 3][i] = FQWINITTHB_6DOF_GY_KALMAN;
             // a_e * a_e terms
-            pthisSV->fQw9x9[i + 6][i + 6] = FQWINITAA_6DOF_GY_KALMAN;
+            fQw9x9[i + 6][i + 6] = FQWINITAA_6DOF_GY_KALMAN;
         }
 
         // clear the reset flag
-        pthisSV->resetflag = false;
+        resetflag = false;
 
         return;
     }  // end fInit_6DOF_GY_KALMAN
 
     // 6DOF accel + gyro Kalman filter algorithm
-    void fRun_6DOF_GY_KALMAN(struct ::filter::tasks::SV_6DOF_GY_KALMAN* pthisSV,
-                             //  struct AccelSensor* pthisAccel,
-                             float accel_reading[3],
-                             //  struct GyroSensor* pthisGyro,
-                             float gyro_reading[3],
-                             int16 ithisCoordSystem,
-                             int16 iOverSampleRatio) {
+    void OrientationFilter::run_filter(float accel_reading[3],
+                                       float gyro_reading[3],
+                                       int16 ithisCoordSystem,
+                                       int16 iOverSampleRatio) {
         // local arrays and scalars
         float rvec[3];         // rotation vector
         float ftmpA9x3[9][3];  // scratch array
@@ -152,35 +146,35 @@ namespace filter::kalman {
         int8 iPivot[3];
 
         // do a reset and return if requested
-        if (pthisSV->resetflag) {
-            fInit_6DOF_GY_KALMAN(pthisSV, SENSORFS, OVERSAMPLE_RATIO);
+        if (resetflag) {
+            init_filter(SENSORFS, OVERSAMPLE_RATIO);
             return;
         }
 
         // do a once-only orientation lock to accelerometer tilt
-        if (!pthisSV->iFirstOrientationLock) {
+        if (!iFirstOrientationLock) {
             // get the 3DOF orientation matrix and initial inclination angle
             if (ithisCoordSystem == NED) {
                 // call NED tilt function
-                // f3DOFTiltNED(pthisSV->fRPl, pthisAccel->fGpFast);
-                f3DOFTiltNED(pthisSV->fRPl, accel_reading);
+                // f3DOFTiltNED(fRPl, pthisAccel->fGpFast);
+                f3DOFTiltNED(fRPl, accel_reading);
             }
             else if (ithisCoordSystem == ANDROID) {
                 // call Android tilt function
-                // f3DOFTiltAndroid(pthisSV->fRPl, pthisAccel->fGpFast);
-                f3DOFTiltAndroid(pthisSV->fRPl, accel_reading);
+                // f3DOFTiltAndroid(fRPl, pthisAccel->fGpFast);
+                f3DOFTiltAndroid(fRPl, accel_reading);
             }
             else {
                 // call Windows 8 tilt function
-                // f3DOFTiltWin8(pthisSV->fRPl, pthisAccel->fGpFast);
-                f3DOFTiltWin8(pthisSV->fRPl, accel_reading);
+                // f3DOFTiltWin8(fRPl, pthisAccel->fGpFast);
+                f3DOFTiltWin8(fRPl, accel_reading);
             }
 
             // get the orientation quaternion from the orientation matrix
-            fQuaternionFromRotationMatrix(pthisSV->fRPl, &(pthisSV->fqPl));
+            fQuaternionFromRotationMatrix(fRPl, &(fqPl));
 
             // set the orientation lock flag so this initial alignment is only performed once
-            pthisSV->iFirstOrientationLock = 1;
+            iFirstOrientationLock = 1;
         }
 
         // *********************************************************************************
@@ -192,12 +186,12 @@ namespace filter::kalman {
         // this involves a small angle approximation but the resulting angular velocity is
         // only computed for transmission over bluetooth and not used for orientation determination.
         for (i = X; i <= Z; i++) {
-            // pthisSV->fOmega[i] = pthisGyro->fYp[i] - pthisSV->fbPl[i];
-            pthisSV->fOmega[i] = gyro_reading[i] - pthisSV->fbPl[i];
+            // fOmega[i] = pthisGyro->fYp[i] - fbPl[i];
+            fOmega[i] = gyro_reading[i] - fbPl[i];
         }
 
         // initialize the a priori orientation quaternion to the a posteriori orientation estimate
-        pthisSV->fqMi = pthisSV->fqPl;
+        fqMi = fqPl;
 
         // TODO: review this
         // We're ignoring this next block for now, because we're using DECIMATION_FACTOR=1
@@ -206,20 +200,20 @@ namespace filter::kalman {
         // for (j = 0; j < iOverSampleRatio; j++) {
         //     // compute the incremental fast (typically 200Hz) rotation vector rvec (deg)
         //     for (i = X; i <= Z; i++) {
-        //         rvec[i] = (((float) pthisGyro->iYpFast[j][i] * pthisGyro->fDegPerSecPerCount) - pthisSV->fbPl[i])
-        //                   * pthisSV->fFastdeltat;
+        //         rvec[i] = (((float) pthisGyro->iYpFast[j][i] * pthisGyro->fDegPerSecPerCount) - fbPl[i])
+        //                   * fFastdeltat;
         //     }
 
         //     // compute the incremental quaternion fDeltaq from the rotation vector
-        //     fQuaternionFromRotationVectorDeg(&(pthisSV->fDeltaq), rvec, 1.0F);
+        //     fQuaternionFromRotationVectorDeg(&(fDeltaq), rvec, 1.0F);
 
         //     // incrementally rotate the a priori orientation quaternion fqMi
         //     // the a posteriori orientation is re-normalized later so this update is stable
-        //     qAeqAxB(&(pthisSV->fqMi), &(pthisSV->fDeltaq));
+        //     qAeqAxB(&(fqMi), &(fDeltaq));
         // }
 
         // get the a priori rotation matrix from the a priori quaternion
-        fRotationMatrixFromQuaternion(pthisSV->fRMi, &(pthisSV->fqMi));
+        fRotationMatrixFromQuaternion(fRMi, &(fqMi));
 
         // *********************************************************************************
         // calculate a priori gyro and accelerometer estimates of the gravity vector
@@ -231,26 +225,26 @@ namespace filter::kalman {
         for (i = X; i <= Z; i++) {
             if (ithisCoordSystem == NED) {
                 // NED gravity is along positive z axis
-                pthisSV->fgSeGyMi[i] = pthisSV->fRMi[i][Z];
+                fgSeGyMi[i] = fRMi[i][Z];
             }
             else {
                 // Android and Win8 gravity are along negative z axis
-                pthisSV->fgSeGyMi[i] = -pthisSV->fRMi[i][Z];
+                fgSeGyMi[i] = -fRMi[i][Z];
             }
 
             // compute a priori acceleration (a-) (g, sensor frame) from a posteriori estimate (g, sensor frame)
-            pthisSV->faSeMi[i] = FCA_6DOF_GY_KALMAN * pthisSV->faSePl[i];
+            faSeMi[i] = FCA_6DOF_GY_KALMAN * faSePl[i];
 
             // compute the a priori gravity error vector (accelerometer minus gyro estimates) (g, sensor frame)
             if ((ithisCoordSystem == NED) || (ithisCoordSystem == WIN8)) {
                 // NED and Windows 8 have positive sign for gravity: y = g - a and g = y + a
-                // pthisSV->fgErrSeMi[i] = pthisAccel->fGpFast[i] + pthisSV->faSeMi[i] - pthisSV->fgSeGyMi[i];
-                pthisSV->fgErrSeMi[i] = accel_reading[i] + pthisSV->faSeMi[i] - pthisSV->fgSeGyMi[i];
+                // fgErrSeMi[i] = pthisAccel->fGpFast[i] + faSeMi[i] - fgSeGyMi[i];
+                fgErrSeMi[i] = accel_reading[i] + faSeMi[i] - fgSeGyMi[i];
             }
             else {
                 // Android has negative sign for gravity: y = a - g, g = -y + a
-                // pthisSV->fgErrSeMi[i] = -pthisAccel->fGpFast[i] + pthisSV->faSeMi[i] - pthisSV->fgSeGyMi[i];
-                pthisSV->fgErrSeMi[i] = -accel_reading[i] + pthisSV->faSeMi[i] - pthisSV->fgSeGyMi[i];
+                // fgErrSeMi[i] = -pthisAccel->fGpFast[i] + faSeMi[i] - fgSeGyMi[i];
+                fgErrSeMi[i] = -accel_reading[i] + faSeMi[i] - fgSeGyMi[i];
             }
         }
 
@@ -259,18 +253,18 @@ namespace filter::kalman {
         // *********************************************************************************
 
         // update measurement matrix C (3x9) with -alpha(g-)x from gyro (g, sensor frame)
-        pthisSV->fC3x9[0][1] = FDEGTORAD * pthisSV->fgSeGyMi[Z];
-        pthisSV->fC3x9[0][2] = -FDEGTORAD * pthisSV->fgSeGyMi[Y];
-        pthisSV->fC3x9[1][2] = FDEGTORAD * pthisSV->fgSeGyMi[X];
-        pthisSV->fC3x9[1][0] = -pthisSV->fC3x9[0][1];
-        pthisSV->fC3x9[2][0] = -pthisSV->fC3x9[0][2];
-        pthisSV->fC3x9[2][1] = -pthisSV->fC3x9[1][2];
-        pthisSV->fC3x9[0][4] = -pthisSV->fdeltat * pthisSV->fC3x9[0][1];
-        pthisSV->fC3x9[0][5] = -pthisSV->fdeltat * pthisSV->fC3x9[0][2];
-        pthisSV->fC3x9[1][5] = -pthisSV->fdeltat * pthisSV->fC3x9[1][2];
-        pthisSV->fC3x9[1][3] = -pthisSV->fC3x9[0][4];
-        pthisSV->fC3x9[2][3] = -pthisSV->fC3x9[0][5];
-        pthisSV->fC3x9[2][4] = -pthisSV->fC3x9[1][5];
+        fC3x9[0][1] = FDEGTORAD * fgSeGyMi[Z];
+        fC3x9[0][2] = -FDEGTORAD * fgSeGyMi[Y];
+        fC3x9[1][2] = FDEGTORAD * fgSeGyMi[X];
+        fC3x9[1][0] = -fC3x9[0][1];
+        fC3x9[2][0] = -fC3x9[0][2];
+        fC3x9[2][1] = -fC3x9[1][2];
+        fC3x9[0][4] = -fdeltat * fC3x9[0][1];
+        fC3x9[0][5] = -fdeltat * fC3x9[0][2];
+        fC3x9[1][5] = -fdeltat * fC3x9[1][2];
+        fC3x9[1][3] = -fC3x9[0][4];
+        fC3x9[2][3] = -fC3x9[0][5];
+        fC3x9[2][4] = -fC3x9[1][5];
 
         // *********************************************************************************
         // calculate the Kalman gain matrix K (9x3)
@@ -293,10 +287,10 @@ namespace filter::kalman {
                 *pftmpA9x3ij = 0.0F;
 
                 // initialize pfC3x9jk for current j, k=0
-                pfC3x9jk = pthisSV->fC3x9[j];
+                pfC3x9jk = fC3x9[j];
 
                 // initialize pfQw9x9ik for current i, k=0
-                pfQw9x9ik = pthisSV->fQw9x9[i];
+                pfQw9x9ik = fQw9x9[i];
 
                 // sum matrix products over inner loop over k
                 for (k = 0; k < 9; k++) {
@@ -327,7 +321,7 @@ namespace filter::kalman {
         for (i = 0; i < 3; i++)  // loop over rows of P+
         {
             // initialize pfPPlus9x9ij for current i, j=i
-            pfPPlus9x9ij = pthisSV->fPPlus9x9[i] + i;
+            pfPPlus9x9ij = fPPlus9x9[i] + i;
 
             for (j = i; j < 3; j++)  // loop over above diagonal columns of P+
             {
@@ -335,7 +329,7 @@ namespace filter::kalman {
                 *pfPPlus9x9ij = 0.0F;
 
                 // initialize pfC3x9ik for current i, k=0
-                pfC3x9ik = pthisSV->fC3x9[i];
+                pfC3x9ik = fC3x9[i];
 
                 // initialize pftmpA9x3kj for current j, k=0
                 pftmpA9x3kj = *ftmpA9x3 + j;
@@ -364,18 +358,18 @@ namespace filter::kalman {
         }      // end of loop over i
 
         // add in noise covariance terms to the diagonal
-        pthisSV->fPPlus9x9[0][0] += pthisSV->fQvAA;
-        pthisSV->fPPlus9x9[1][1] += pthisSV->fQvAA;
-        pthisSV->fPPlus9x9[2][2] += pthisSV->fQvAA;
+        fPPlus9x9[0][0] += fQvAA;
+        fPPlus9x9[1][1] += fQvAA;
+        fPPlus9x9[2][2] += fQvAA;
 
         // copy above diagonal terms of P+ (3x3 scratch sub-matrix) to below diagonal terms
-        pthisSV->fPPlus9x9[1][0] = pthisSV->fPPlus9x9[0][1];
-        pthisSV->fPPlus9x9[2][0] = pthisSV->fPPlus9x9[0][2];
-        pthisSV->fPPlus9x9[2][1] = pthisSV->fPPlus9x9[1][2];
+        fPPlus9x9[1][0] = fPPlus9x9[0][1];
+        fPPlus9x9[2][0] = fPPlus9x9[0][2];
+        fPPlus9x9[2][1] = fPPlus9x9[1][2];
 
         // calculate inverse of P+ (3x3 scratch sub-matrix) = inv(C * P- * C^T + Qv) = inv(C * Qw * C^T + Qv)
         for (i = 0; i < 3; i++) {
-            pfRows[i] = pthisSV->fPPlus9x9[i];
+            pfRows[i] = fPPlus9x9[i];
         }
         fmatrixAeqInvA(pfRows, iColInd, iRowInd, iPivot, 3);
 
@@ -386,7 +380,7 @@ namespace filter::kalman {
         for (i = 0; i < 9; i++)  // loop over rows of K9x3
         {
             // initialize pfK9x3ij for i, j=0
-            pfK9x3ij = pthisSV->fK9x3[i];
+            pfK9x3ij = fK9x3[i];
 
             for (j = 0; j < 3; j++)  // loop over columns of K9x3
             {
@@ -397,7 +391,7 @@ namespace filter::kalman {
                 pftmpA9x3ik = ftmpA9x3[i];
 
                 // initialize pfPPlus9x9kj for j, k=0
-                pfPPlus9x9kj = *pthisSV->fPPlus9x9 + j;
+                pfPPlus9x9kj = *fPPlus9x9 + j;
 
                 // sum matrix products over inner loop over k
                 for (k = 0; k < 3; k++) {
@@ -424,13 +418,13 @@ namespace filter::kalman {
         // update the a posteriori state vector
         for (i = X; i <= Z; i++) {
             // zero a posteriori error terms
-            pthisSV->fThErrPl[i] = pthisSV->fbErrPl[i] = pthisSV->faErrSePl[i] = 0.0F;
+            fThErrPl[i] = fbErrPl[i] = faErrSePl[i] = 0.0F;
 
             // accumulate the error vector terms K * ze-
             for (k = 0; k < 3; k++) {
-                pthisSV->fThErrPl[i] += pthisSV->fK9x3[i][k] * pthisSV->fgErrSeMi[k];
-                pthisSV->fbErrPl[i] += pthisSV->fK9x3[i + 3][k] * pthisSV->fgErrSeMi[k];
-                pthisSV->faErrSePl[i] += pthisSV->fK9x3[i + 6][k] * pthisSV->fgErrSeMi[k];
+                fThErrPl[i] += fK9x3[i][k] * fgErrSeMi[k];
+                fbErrPl[i] += fK9x3[i + 3][k] * fgErrSeMi[k];
+                faErrSePl[i] += fK9x3[i + 6][k] * fgErrSeMi[k];
             }
         }
 
@@ -439,28 +433,28 @@ namespace filter::kalman {
         // *********************************************************************************
 
         // get the a posteriori delta quaternion
-        fQuaternionFromRotationVectorDeg(&(pthisSV->fDeltaq), pthisSV->fThErrPl, -1.0F);
+        fQuaternionFromRotationVectorDeg(&(fDeltaq), fThErrPl, -1.0F);
 
         // compute the a posteriori orientation quaternion fqPl = fqMi * Deltaq(-thetae+)
         // the resulting quaternion may have negative scalar component q0
-        qAeqBxC(&(pthisSV->fqPl), &(pthisSV->fqMi), &(pthisSV->fDeltaq));
+        qAeqBxC(&(fqPl), &(fqMi), &(fDeltaq));
 
         // normalize the a posteriori orientation quaternion to stop error propagation
         // the renormalization function ensures that the scalar component q0 is non-negative
-        fqAeqNormqA(&(pthisSV->fqPl));
+        fqAeqNormqA(&(fqPl));
 
         // compute the a posteriori rotation matrix from the a posteriori quaternion
-        fRotationMatrixFromQuaternion(pthisSV->fRPl, &(pthisSV->fqPl));
+        fRotationMatrixFromQuaternion(fRPl, &(fqPl));
 
         // compute the rotation vector from the a posteriori quaternion
-        fRotationVectorDegFromQuaternion(&(pthisSV->fqPl), pthisSV->fRVecPl);
+        fRotationVectorDegFromQuaternion(&(fqPl), fRVecPl);
 
         // update the a posteriori gyro offset vector b+ and linear acceleration vector a+ (sensor frame)
         for (i = X; i <= Z; i++) {
             // b+[k] = b-[k] - be+[k] = b+[k] - be+[k] (deg/s)
-            pthisSV->fbPl[i] -= pthisSV->fbErrPl[i];
+            fbPl[i] -= fbErrPl[i];
             // a+ = a- - ae+ (g, sensor frame)
-            pthisSV->faSePl[i] = pthisSV->faSeMi[i] - pthisSV->faErrSePl[i];
+            faSePl[i] = faSeMi[i] - faErrSePl[i];
         }
 
         // *********************************************************************************
@@ -469,30 +463,15 @@ namespace filter::kalman {
 
         if (ithisCoordSystem == NED) {
             // calculate the NED Euler angles
-            fNEDAnglesDegFromRotationMatrix(pthisSV->fRPl,
-                                            &(pthisSV->fPhiPl),
-                                            &(pthisSV->fThePl),
-                                            &(pthisSV->fPsiPl),
-                                            &(pthisSV->fRhoPl),
-                                            &(pthisSV->fChiPl));
+            fNEDAnglesDegFromRotationMatrix(fRPl, &(fPhiPl), &(fThePl), &(fPsiPl), &(fRhoPl), &(fChiPl));
         }
         else if (ithisCoordSystem == ANDROID) {
             // calculate the Android Euler angles
-            fAndroidAnglesDegFromRotationMatrix(pthisSV->fRPl,
-                                                &(pthisSV->fPhiPl),
-                                                &(pthisSV->fThePl),
-                                                &(pthisSV->fPsiPl),
-                                                &(pthisSV->fRhoPl),
-                                                &(pthisSV->fChiPl));
+            fAndroidAnglesDegFromRotationMatrix(fRPl, &(fPhiPl), &(fThePl), &(fPsiPl), &(fRhoPl), &(fChiPl));
         }
         else {
             // calculate Win8 Euler angles
-            fWin8AnglesDegFromRotationMatrix(pthisSV->fRPl,
-                                             &(pthisSV->fPhiPl),
-                                             &(pthisSV->fThePl),
-                                             &(pthisSV->fPsiPl),
-                                             &(pthisSV->fRhoPl),
-                                             &(pthisSV->fChiPl));
+            fWin8AnglesDegFromRotationMatrix(fRPl, &(fPhiPl), &(fThePl), &(fPsiPl), &(fRhoPl), &(fChiPl));
         }
 
         // ***********************************************************************************
@@ -508,7 +487,7 @@ namespace filter::kalman {
         for (i = 0; i < 3; i++)  // loop over the rows of P+
         {
             // initialize pfPPlus9x9ij for current i, j=0
-            pfPPlus9x9ij = pthisSV->fPPlus9x9[i];
+            pfPPlus9x9ij = fPPlus9x9[i];
 
             for (j = 0; j < 9; j++)  // loop over the columns of P+
             {
@@ -516,10 +495,10 @@ namespace filter::kalman {
                 *pfPPlus9x9ij = 0.0F;
 
                 // initialize pfC3x9ik for current i, k=0
-                pfC3x9ik = pthisSV->fC3x9[i];
+                pfC3x9ik = fC3x9[i];
 
                 // initialize pfQw9x9kj for current j, k=0
-                pfQw9x9kj = &pthisSV->fQw9x9[0][j];
+                pfQw9x9kj = &fQw9x9[0][j];
 
                 // sum matrix products over inner loop over k
                 for (k = 0; k < 9; k++) {
@@ -550,14 +529,14 @@ namespace filter::kalman {
         // only on and above diagonal terms of P+ are computed since P+ is symmetric
         for (i = 0; i < 9; i++) {
             // initialize pfQw9x9ij for i, j=i
-            pfQw9x9ij = pthisSV->fQw9x9[i] + i;
+            pfQw9x9ij = fQw9x9[i] + i;
 
             for (j = i; j < 9; j++) {
                 // initialize pfK9x3ik for i, k=0
-                pfK9x3ik = pthisSV->fK9x3[i];
+                pfK9x3ik = fK9x3[i];
 
                 // initialize pfPPlus9x9kj for j, k=0
-                pfPPlus9x9kj = *pthisSV->fPPlus9x9 + j;
+                pfPPlus9x9kj = *fPPlus9x9 + j;
 
                 // compute on and above diagonal matrix entry
                 for (k = 0; k < 3; k++) {
@@ -583,15 +562,15 @@ namespace filter::kalman {
         // after execution of this code P+ is valid but Qw remains invalid
         for (i = 0; i < 9; i++) {
             // initialize pfPPlus9x9ij and pfQw9x9ij for i, j=i
-            pfPPlus9x9ij = pthisSV->fPPlus9x9[i] + i;
-            pfQw9x9ij    = pthisSV->fQw9x9[i] + i;
+            pfPPlus9x9ij = fPPlus9x9[i] + i;
+            pfQw9x9ij    = fQw9x9[i] + i;
 
             // copy the on-diagonal elements and increment pointers to enter loop at j=i+1
             *(pfPPlus9x9ij++) = *(pfQw9x9ij++);
 
             // loop over above diagonal columns j copying to below-diagonal elements
             for (j = i + 1; j < 9; j++) {
-                *(pfPPlus9x9ij++) = pthisSV->fPPlus9x9[j][i] = *(pfQw9x9ij++);
+                *(pfPPlus9x9ij++) = fPPlus9x9[j][i] = *(pfQw9x9ij++);
             }
         }
 
@@ -604,24 +583,23 @@ namespace filter::kalman {
         // zero the matrix Qw (9x9)
         for (i = 0; i < 9; i++) {
             for (j = 0; j < 9; j++) {
-                pthisSV->fQw9x9[i][j] = 0.0F;
+                fQw9x9[i][j] = 0.0F;
             }
         }
 
         // update the covariance matrix components
         for (i = 0; i < 3; i++) {
             // Qw[th-th-] = Qw[0-2][0-2] = E[th-(th-)^T] = Q[th+th+] + deltat^2 * (Q[b+b+] + (Qwb + QvG) * I)
-            pthisSV->fQw9x9[i][i] = pthisSV->fPPlus9x9[i][i]
-                                    + pthisSV->fdeltatsq * (pthisSV->fPPlus9x9[i + 3][i + 3] + pthisSV->fQwbplusQvG);
+            fQw9x9[i][i] = fPPlus9x9[i][i] + fdeltatsq * (fPPlus9x9[i + 3][i + 3] + fQwbplusQvG);
 
             // Qw[b-b-] = Qw[3-5][3-5] = E[b-(b-)^T] = Q[b+b+] + Qwb * I
-            pthisSV->fQw9x9[i + 3][i + 3] = pthisSV->fPPlus9x9[i + 3][i + 3] + FQWB_6DOF_GY_KALMAN;
+            fQw9x9[i + 3][i + 3] = fPPlus9x9[i + 3][i + 3] + FQWB_6DOF_GY_KALMAN;
 
             // Qw[th-b-] = Qw[0-2][3-5] = E[th-(b-)^T] = -deltat * (Q[b+b+] + Qwb * I) = -deltat * Qw[b-b-]
-            pthisSV->fQw9x9[i][i + 3] = pthisSV->fQw9x9[i + 3][i] = -pthisSV->fdeltat * pthisSV->fQw9x9[i + 3][i + 3];
+            fQw9x9[i][i + 3] = fQw9x9[i + 3][i] = -fdeltat * fQw9x9[i + 3][i + 3];
 
             // Qw[a-a-] = Qw[6-8][6-8] = E[a-(a-)^T] = ca^2 * Q[a+a+] + Qwa * I
-            pthisSV->fQw9x9[i + 6][i + 6] = pthisSV->fcasq * pthisSV->fPPlus9x9[i + 6][i + 6] + FQWA_6DOF_GY_KALMAN;
+            fQw9x9[i + 6][i + 6] = fcasq * fPPlus9x9[i + 6][i + 6] + FQWA_6DOF_GY_KALMAN;
         }
 
         return;

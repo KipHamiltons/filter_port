@@ -23,13 +23,33 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-#ifndef TASKS_HPP
-#define TASKS_HPP
+#ifndef ORIENTATION_FILTER_HPP
+#define ORIENTATION_FILTER_HPP
 
 #include "build.hpp"
-namespace filter::tasks {
+namespace filter::kalman {
+    // *********************************************************************************
+    // COMPUTE_6DOF_GY_KALMAN constants
+    // *********************************************************************************
+    // kalman filter noise variances
+    static constexpr double FQVA_6DOF_GY_KALMAN = 2e-6;  // accelerometer noise g^2 so 1.4mg RMS
+    // gyro noise (deg/s)^2
+    static constexpr double FQVG_6DOF_GY_KALMAN = 0.3F;
+    // gyro offset drift (deg/s)^2: 1E-9 implies 0.09deg/s max at 50Hz
+    static constexpr double FQWB_6DOF_GY_KALMAN = 1e-9;
+    // linear acceleration drift g^2 (increase slows convergence to g but reduces sensitivity to shake)
+    static constexpr double FQWA_6DOF_GY_KALMAN = 1e-4;
+    // initialization of Qw covariance matrix
+    static constexpr double FQWINITTHTH_6DOF_GY_KALMAN = 2000e-5;  // th_e * th_e terms
+    static constexpr double FQWINITBB_6DOF_GY_KALMAN   = 250e-3;   // for FXAS21000: b_e * b_e terms
+    static constexpr double FQWINITTHB_6DOF_GY_KALMAN  = 0.0;      // th_e * b_e terms
+    // a_e * a_e terms (increase slows convergence to g but reduces sensitivity to shake)
+    static constexpr double FQWINITAA_6DOF_GY_KALMAN = 10e-5F;
+    // linear acceleration time constant
+    static constexpr double FCA_6DOF_GY_KALMAN = 0.5;  // linear acceleration decay factor
     // 6DOF Kalman filter accelerometer and gyroscope state vector structure
-    struct SV_6DOF_GY_KALMAN {
+
+    class OrientationFilter {
         // start: elements common to all motion state vectors
         // Euler angles
         float fPhiPl;  // roll (deg)
@@ -77,20 +97,10 @@ namespace filter::tasks {
         float fQwbplusQvG;            // FQWB + FQVG;
         int16 iFirstOrientationLock;  // denotes that 6DOF orientation has locked to 3DOF
         int8 resetflag;               // flag to request re-initialization on next pass
+
+        void init_filter(int16 iSensorFS, int16 iOverSampleRatio);
+        void run_filter(float accel_reading[3], float gyro_reading[3], int16 ithisCoordSystem, int16 iOverSampleRatio);
     };
 
-    // globals defined in tasks_func.c declared here for use elsewhere
-    extern struct AccelSensor thisAccel;
-    extern struct GyroSensor thisGyro;
-    extern struct SV_6DOF_GY_KALMAN thisSV_6DOF_GY_KALMAN;
-
-    // function prototypes for functions in tasks_func.c
-    void ApplyAccelHAL(struct AccelSensor* pthisAccel);
-    void ApplyMagHAL(struct MagSensor* pthisMag);
-    void ApplyGyroHAL(struct GyroSensor* pthisGyro, int16 irow);
-    void RdSensData_Init(void);
-    void RdSensData_Run(void);
-    void Fusion_Init(void);
-    void Fusion_Run(void);
-}  // namespace filter::tasks
-#endif  // #ifndef TASKS_HPP
+}  // namespace filter::kalman
+#endif  // #ifndef ORIENTATION_FILTER_HPP
