@@ -32,7 +32,6 @@
 
 #include <cmath>
 
-#include "approximations.hpp"
 #include "build.hpp"
 #include "matrix.hpp"
 // #include "stdio.h"
@@ -47,12 +46,14 @@
 
 namespace filter::orientation {
 
-    using filter::approximations::facos_deg;
-    using filter::approximations::fasin_deg;
-    using filter::approximations::fatan2_deg;
-    using filter::approximations::fatan_deg;
     using filter::matrix::f3x3matrixAeqI;
     using filter::matrix::f3x3matrixAeqScalar;
+
+    [[nodiscard]] constexpr float fasin_deg(float x) {
+        const float asin_rad = std::asin(x);
+        const float asin_deg = asin_rad * 180.0f * M_1_PI;
+        return asin_deg;
+    }
 
     // Aerospace NED accelerometer 3DOF tilt function computing rotation matrix fR
     void f3DOFTiltNED(float fR[][3], float fGp[]) {
@@ -429,190 +430,6 @@ namespace filter::orientation {
         if (!((fmod[Z] == 0.0F) || (fmodBc == 0.0F))) {
             *pfDelta = fasin_deg(fGdotBc / (fmod[Z] * fmodBc));
         }
-
-        return;
-    }
-
-    // extract the NED angles in degrees from the NED rotation matrix
-    void fNEDAnglesDegFromRotationMatrix(float R[][3],
-                                         float* pfPhiDeg,
-                                         float* pfTheDeg,
-                                         float* pfPsiDeg,
-                                         float* pfRhoDeg,
-                                         float* pfChiDeg) {
-        // calculate the pitch angle -90.0 <= Theta <= 90.0 deg
-        *pfTheDeg = fasin_deg(-R[X][Z]);
-
-        // calculate the roll angle range -180.0 <= Phi < 180.0 deg
-        *pfPhiDeg = fatan2_deg(R[Y][Z], R[Z][Z]);
-
-        // map +180 roll onto the functionally equivalent -180 deg roll
-        if (*pfPhiDeg == 180.0F) {
-            *pfPhiDeg = -180.0F;
-        }
-
-        // calculate the yaw (compass) angle 0.0 <= Psi < 360.0 deg
-        if (*pfTheDeg == 90.0F) {
-            // vertical upwards gimbal lock case
-            *pfPsiDeg = fatan2_deg(R[Z][Y], R[Y][Y]) + *pfPhiDeg;
-        }
-        else if (*pfTheDeg == -90.0F) {
-            // vertical downwards gimbal lock case
-            *pfPsiDeg = fatan2_deg(-R[Z][Y], R[Y][Y]) - *pfPhiDeg;
-        }
-        else {
-            // general case
-            *pfPsiDeg = fatan2_deg(R[X][Y], R[X][X]);
-        }
-
-        // map yaw angle Psi onto range 0.0 <= Psi < 360.0 deg
-        if (*pfPsiDeg < 0.0F) {
-            *pfPsiDeg += 360.0F;
-        }
-
-        // check for rounding errors mapping small negative angle to 360 deg
-        if (*pfPsiDeg >= 360.0F) {
-            *pfPsiDeg = 0.0F;
-        }
-
-        // for NED, the compass heading Rho equals the yaw angle Psi
-        *pfRhoDeg = *pfPsiDeg;
-
-        // calculate the tilt angle from vertical Chi (0 <= Chi <= 180 deg)
-        *pfChiDeg = facos_deg(R[Z][Z]);
-
-        return;
-    }
-
-    // extract the Android angles in degrees from the Android rotation matrix
-    void fAndroidAnglesDegFromRotationMatrix(float R[][3],
-                                             float* pfPhiDeg,
-                                             float* pfTheDeg,
-                                             float* pfPsiDeg,
-                                             float* pfRhoDeg,
-                                             float* pfChiDeg) {
-        // calculate the roll angle -90.0 <= Phi <= 90.0 deg
-        *pfPhiDeg = fasin_deg(R[X][Z]);
-
-        // calculate the pitch angle -180.0 <= The < 180.0 deg
-        *pfTheDeg = fatan2_deg(-R[Y][Z], R[Z][Z]);
-
-        // map +180 pitch onto the functionally equivalent -180 deg pitch
-        if (*pfTheDeg == 180.0F) {
-            *pfTheDeg = -180.0F;
-        }
-
-        // calculate the yaw (compass) angle 0.0 <= Psi < 360.0 deg
-        if (*pfPhiDeg == 90.0F) {
-            // vertical downwards gimbal lock case
-            *pfPsiDeg = fatan2_deg(R[Y][X], R[Y][Y]) - *pfTheDeg;
-        }
-        else if (*pfPhiDeg == -90.0F) {
-            // vertical upwards gimbal lock case
-            *pfPsiDeg = fatan2_deg(R[Y][X], R[Y][Y]) + *pfTheDeg;
-        }
-        else {
-            // // general case
-            *pfPsiDeg = fatan2_deg(-R[X][Y], R[X][X]);
-        }
-
-        // map yaw angle Psi onto range 0.0 <= Psi < 360.0 deg
-        if (*pfPsiDeg < 0.0F) {
-            *pfPsiDeg += 360.0F;
-        }
-
-        // check for rounding errors mapping small negative angle to 360 deg
-        if (*pfPsiDeg >= 360.0F) {
-            *pfPsiDeg = 0.0F;
-        }
-
-        // the compass heading angle Rho equals the yaw angle Psi
-        // this definition is compliant with Motorola Xoom tablet behavior
-        *pfRhoDeg = *pfPsiDeg;
-
-        // calculate the tilt angle from vertical Chi (0 <= Chi <= 180 deg)
-        *pfChiDeg = facos_deg(R[Z][Z]);
-
-        return;
-    }
-
-    // extract the Windows 8 angles in degrees from the Windows 8 rotation matrix
-    void fWin8AnglesDegFromRotationMatrix(float R[][3],
-                                          float* pfPhiDeg,
-                                          float* pfTheDeg,
-                                          float* pfPsiDeg,
-                                          float* pfRhoDeg,
-                                          float* pfChiDeg) {
-        // calculate the roll angle -90.0 <= Phi <= 90.0 deg
-        if (R[Z][Z] == 0.0F) {
-            if (R[X][Z] >= 0.0F) {
-                // tan(phi) is -infinity
-                *pfPhiDeg = -90.0F;
-            }
-            else {
-                // tan(phi) is +infinity
-                *pfPhiDeg = 90.0F;
-            }
-        }
-        else {
-            // general case
-            *pfPhiDeg = fatan_deg(-R[X][Z] / R[Z][Z]);
-        }
-
-        // first calculate the pitch angle The in the range -90.0 <= The <= 90.0 deg
-        *pfTheDeg = fasin_deg(R[Y][Z]);
-
-        // use R[Z][Z]=cos(Phi)*cos(The) to correct the quadrant of The remembering
-        // cos(Phi) is non-negative so that cos(The) has the same sign as R[Z][Z].
-        if (R[Z][Z] < 0.0F) {
-            // wrap The around +90 deg and -90 deg giving result 90 to 270 deg
-            *pfTheDeg = 180.0F - *pfTheDeg;
-        }
-
-        // map the pitch angle The to the range -180.0 <= The < 180.0 deg
-        if (*pfTheDeg >= 180.0F) {
-            *pfTheDeg -= 360.0F;
-        }
-
-        // calculate the yaw angle Psi
-        if (*pfTheDeg == 90.0F) {
-            // vertical upwards gimbal lock case: -270 <= Psi < 90 deg
-            *pfPsiDeg = fatan2_deg(R[X][Y], R[X][X]) - *pfPhiDeg;
-        }
-        else if (*pfTheDeg == -90.0F) {
-            // vertical downwards gimbal lock case: -270 <= Psi < 90 deg
-            *pfPsiDeg = fatan2_deg(R[X][Y], R[X][X]) + *pfPhiDeg;
-        }
-        else {
-            // general case: -180 <= Psi < 180 deg
-            *pfPsiDeg = fatan2_deg(-R[Y][X], R[Y][Y]);
-
-            // correct the quadrant for Psi using the value of The (deg) to give -180 <= Psi < 380 deg
-            if (std::fabs(*pfTheDeg) >= 90.0F) {
-                *pfPsiDeg += 180.0F;
-            }
-        }
-
-        // map yaw angle Psi onto range 0.0 <= Psi < 360.0 deg
-        if (*pfPsiDeg < 0.0F) {
-            *pfPsiDeg += 360.0F;
-        }
-
-        // check for any rounding error mapping small negative angle to 360 deg
-        if (*pfPsiDeg >= 360.0F) {
-            *pfPsiDeg = 0.0F;
-        }
-
-        // compute the compass angle Rho = 360 - Psi
-        *pfRhoDeg = 360.0F - *pfPsiDeg;
-
-        // check for rounding errors mapping small negative angle to 360 deg and zero degree case
-        if (*pfRhoDeg >= 360.0F) {
-            *pfRhoDeg = 0.0F;
-        }
-
-        // calculate the tilt angle from vertical Chi (0 <= Chi <= 180 deg)
-        *pfChiDeg = facos_deg(R[Z][Z]);
 
         return;
     }

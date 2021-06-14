@@ -457,23 +457,6 @@ namespace filter::kalman {
             faSePl[i] = faSeMi[i] - faErrSePl[i];
         }
 
-        // *********************************************************************************
-        // compute the a posteriori Euler angles from the orientation matrix
-        // *********************************************************************************
-
-        if (ithisCoordSystem == NED) {
-            // calculate the NED Euler angles
-            fNEDAnglesDegFromRotationMatrix(fRPl, &(fPhiPl), &(fThePl), &(fPsiPl), &(fRhoPl), &(fChiPl));
-        }
-        else if (ithisCoordSystem == ANDROID) {
-            // calculate the Android Euler angles
-            fAndroidAnglesDegFromRotationMatrix(fRPl, &(fPhiPl), &(fThePl), &(fPsiPl), &(fRhoPl), &(fChiPl));
-        }
-        else {
-            // calculate Win8 Euler angles
-            fWin8AnglesDegFromRotationMatrix(fRPl, &(fPhiPl), &(fThePl), &(fPsiPl), &(fRhoPl), &(fChiPl));
-        }
-
         // ***********************************************************************************
         // calculate (symmetric) a posteriori error covariance matrix P+
         // P+ = (I12 - K * C) * P- = (I12 - K * C) * Qw = Qw - K * (C * Qw)
