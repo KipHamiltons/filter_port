@@ -27,23 +27,22 @@
 #define ORIENTATION_FILTER_HPP
 
 #include "build.hpp"
-#include "matrix.hpp"
-#include "orientation.hpp"
+#include "utilities.hpp"
 namespace filter::kalman {
 
-    using filter::matrix::f3x3matrixAeqI;
-    using filter::matrix::fmatrixAeqInvA;
-    using filter::orientation::f3DOFTiltAndroid;
-    using filter::orientation::f3DOFTiltNED;
-    using filter::orientation::f3DOFTiltWin8;
-    using filter::orientation::fqAeq1;
-    using filter::orientation::fqAeqNormqA;
-    using filter::orientation::fQuaternionFromRotationMatrix;
-    using filter::orientation::fQuaternionFromRotationVectorDeg;
-    using filter::orientation::fRotationMatrixFromQuaternion;
-    using filter::orientation::fRotationVectorDegFromQuaternion;
-    using filter::orientation::qAeqAxB;
-    using filter::orientation::qAeqBxC;
+    using filter::utilities::f3DOFTiltAndroid;
+    using filter::utilities::f3DOFTiltNED;
+    using filter::utilities::f3DOFTiltWin8;
+    using filter::utilities::f3x3matrixAeqI;
+    using filter::utilities::fmatrixAeqInvA;
+    using filter::utilities::fqAeq1;
+    using filter::utilities::fqAeqNormqA;
+    using filter::utilities::fQuaternionFromRotationMatrix;
+    using filter::utilities::fQuaternionFromRotationVectorDeg;
+    using filter::utilities::fRotationMatrixFromQuaternion;
+    using filter::utilities::fRotationVectorDegFromQuaternion;
+    using filter::utilities::qAeqAxB;
+    using filter::utilities::qAeqBxC;
 
     // *********************************************************************************
     // COMPUTE_6DOF_GY_KALMAN constants
