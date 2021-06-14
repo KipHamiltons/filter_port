@@ -30,19 +30,18 @@
 #include "utilities.hpp"
 namespace filter::kalman {
 
+    using filter::utilities::A_eq_AxB_quat_product;
+    using filter::utilities::A_eq_BxC_quat_product;
     using filter::utilities::f3DOFTiltAndroid;
     using filter::utilities::f3DOFTiltNED;
     using filter::utilities::f3DOFTiltWin8;
-    using filter::utilities::f3x3matrixAeqI;
-    using filter::utilities::fmatrixAeqInvA;
-    using filter::utilities::fqAeq1;
-    using filter::utilities::fqAeqNormqA;
-    using filter::utilities::fQuaternionFromRotationMatrix;
-    using filter::utilities::fQuaternionFromRotationVectorDeg;
-    using filter::utilities::fRotationMatrixFromQuaternion;
-    using filter::utilities::fRotationVectorDegFromQuaternion;
-    using filter::utilities::qAeqAxB;
-    using filter::utilities::qAeqBxC;
+    using filter::utilities::normalise_quaternion_inplace;
+    using filter::utilities::quat_from_rot_mat;
+    using filter::utilities::quat_from_rot_vec;
+    using filter::utilities::rot_mat_from_quat;
+    using filter::utilities::set_identity3x3;
+    using filter::utilities::set_identity_quaternion;
+    using filter::utilities::set_inverse_inplace;
 
     // *********************************************************************************
     // COMPUTE_6DOF_GY_KALMAN constants
@@ -120,8 +119,8 @@ namespace filter::kalman {
             fC3x9[0][6] = fC3x9[1][7] = fC3x9[2][8] = 1.0;
 
             // zero a posteriori orientation, error vector xe+ (thetae+, be+, ae+) and b+
-            f3x3matrixAeqI(posterior_orientation_mat);
-            fqAeq1(&(posterior_orientation_quat));
+            set_identity3x3(posterior_orientation_mat);
+            set_identity_quaternion(&(posterior_orientation_quat));
             for (i = X; i <= Z; i++) {
                 fThErrPl[i] = fbErrPl[i] = faErrSePl[i] = fbPl[i] = 0.0;
             }
@@ -210,7 +209,7 @@ namespace filter::kalman {
                 }
 
                 // get the orientation quaternion from the orientation matrix
-                fQuaternionFromRotationMatrix(posterior_orientation_mat, &(posterior_orientation_quat));
+                quat_from_rot_mat(posterior_orientation_mat, &(posterior_orientation_quat));
 
                 // set the orientation lock flag so this initial alignment is only performed once
                 iFirstOrientationLock = 1;
@@ -231,14 +230,14 @@ namespace filter::kalman {
             }
 
             // compute the incremental quaternion fDeltaq from the rotation vector
-            fQuaternionFromRotationVectorDeg(&(fDeltaq), rvec, 1.0);
+            quat_from_rot_vec(&(fDeltaq), rvec, 1.0);
 
             // incrementally rotate the a priori orientation quaternion fqMi
             // the a posteriori orientation is re-normalized later so this update is stable
-            qAeqAxB(&(fqMi), &(fDeltaq));
+            A_eq_AxB_quat_product(&(fqMi), &(fDeltaq));
 
             // get the a priori rotation matrix from the a priori quaternion
-            fRotationMatrixFromQuaternion(fRMi, &(fqMi));
+            rot_mat_from_quat(fRMi, &(fqMi));
 
             // *********************************************************************************
             // calculate a priori gyro and accelerometer estimates of the gravity vector
@@ -396,7 +395,7 @@ namespace filter::kalman {
             for (i = 0; i < 3; i++) {
                 pfRows[i] = fPPlus9x9[i];
             }
-            fmatrixAeqInvA(pfRows, iColInd, iRowInd, iPivot, 3);
+            set_inverse_inplace(pfRows, iColInd, iRowInd, iPivot, 3);
 
             // set K = P- * C^T * inv(C * P- * C^T + Qv) = Qw * C^T * inv(C * Qw * C^T + Qv)
             // = ftmpA9x3 * P+ (3x3 sub-matrix)
@@ -458,18 +457,18 @@ namespace filter::kalman {
             // *********************************************************************************
 
             // get the a posteriori delta quaternion
-            fQuaternionFromRotationVectorDeg(&(fDeltaq), fThErrPl, -1.0);
+            quat_from_rot_vec(&(fDeltaq), fThErrPl, -1.0);
 
             // compute the a posteriori orientation quaternion posterior_orientation_quat = fqMi * Deltaq(-thetae+)
             // the resulting quaternion may have negative scalar component q0
-            qAeqBxC(&(posterior_orientation_quat), &(fqMi), &(fDeltaq));
+            A_eq_BxC_quat_product(&(posterior_orientation_quat), &(fqMi), &(fDeltaq));
 
             // normalize the a posteriori orientation quaternion to stop error propagation
             // the renormalization function ensures that the scalar component q0 is non-negative
-            fqAeqNormqA<Scalar>(&(posterior_orientation_quat));
+            normalise_quaternion_inplace<Scalar>(&(posterior_orientation_quat));
 
             // compute the a posteriori rotation matrix from the a posteriori quaternion
-            fRotationMatrixFromQuaternion(posterior_orientation_mat, &(posterior_orientation_quat));
+            rot_mat_from_quat(posterior_orientation_mat, &(posterior_orientation_quat));
 
             // update the a posteriori gyro offset vector b+ and linear acceleration vector a+ (sensor frame)
             for (i = X; i <= Z; i++) {

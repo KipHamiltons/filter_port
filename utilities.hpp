@@ -52,7 +52,7 @@ namespace filter::utilities {
 
     // function sets the 3x3 matrix A to the identity matrix
     template <typename Scalar>
-    inline void f3x3matrixAeqI(Scalar A[][3]) {
+    inline void set_identity3x3(Scalar A[][3]) {
         Scalar* pAij;  // pointer to A[i][j]
         int i, j;      // loop counters
 
@@ -60,16 +60,15 @@ namespace filter::utilities {
             // set pAij to &A[i][j=0]
             pAij = A[i];
             for (j = 0; j < 3; j++) {
-                *(pAij++) = 0.0F;
+                *(pAij++) = 0.0;
             }
-            A[i][i] = 1.0F;
+            A[i][i] = 1.0;
         }
-        return;
     }
 
     // function sets the matrix A to the identity matrix
     template <typename Scalar>
-    inline void fmatrixAeqI(Scalar* A[], int rc) {
+    inline void set_identity(Scalar* A[], int rc) {
         // rc = rows and columns in A
 
         Scalar* pAij;  // pointer to A[i][j]
@@ -79,16 +78,15 @@ namespace filter::utilities {
             // set pAij to &A[i][j=0]
             pAij = A[i];
             for (j = 0; j < rc; j++) {
-                *(pAij++) = 0.0F;
+                *(pAij++) = 0.0;
             }
-            A[i][i] = 1.0F;
+            A[i][i] = 1.0;
         }
-        return;
     }
 
     // function sets every entry in the 3x3 matrix A to a constant scalar
     template <typename Scalar>
-    inline void f3x3matrixAeqScalar(Scalar A[][3], Scalar scalar) {
+    inline void set_zero3x3(Scalar A[][3]) {
         Scalar* pAij;  // pointer to A[i][j]
         int i, j;      // counters
 
@@ -96,16 +94,15 @@ namespace filter::utilities {
             // set pAij to &A[i][j=0]
             pAij = A[i];
             for (j = 0; j < 3; j++) {
-                *(pAij++) = scalar;
+                *(pAij++) = 0.0;
             }
         }
-        return;
     }
 
     // function uses Gauss-Jordan elimination to compute the inverse of matrix A in situ
     // on exit, A is replaced with its inverse
     template <typename Scalar>
-    inline void fmatrixAeqInvA(Scalar* A[], int iColInd[], int iRowInd[], int iPivot[], int isize) {
+    inline void set_inverse_inplace(Scalar* A[], int iColInd[], int iRowInd[], int iPivot[], int isize) {
         Scalar largest;            // largest element used for pivoting
         Scalar scaling;            // scaling factor in pivoting
         Scalar recippiv;           // reciprocal of pivot element
@@ -134,16 +131,16 @@ namespace filter::utilities {
                         // check if column k has previously been pivoted
                         if (iPivot[k] == 0) {
                             // check if the pivot element is the largest found so far
-                            if (std::fabs(A[j][k]) >= largest) {
+                            if (std::abs(A[j][k]) >= largest) {
                                 // and store this location as the current best candidate for pivoting
                                 iPivotRow = j;
                                 iPivotCol = k;
-                                largest   = (Scalar) std::fabs(A[iPivotRow][iPivotCol]);
+                                largest   = (Scalar) std::abs(A[iPivotRow][iPivotCol]);
                             }
                         }
                         else if (iPivot[k] > 1) {
                             // zero determinant situation: exit with identity matrix
-                            fmatrixAeqI(A, isize);
+                            set_identity(A, isize);
                             return;
                         }
                     }
@@ -170,7 +167,7 @@ namespace filter::utilities {
             // check for zero on-diagonal element (singular matrix) and return with identity matrix if detected
             if (A[iPivotCol][iPivotCol] == 0.0F) {
                 // zero determinant situation: exit with identity matrix
-                fmatrixAeqI(A, isize);
+                set_identity(A, isize);
                 return;
             }
 
@@ -214,13 +211,11 @@ namespace filter::utilities {
                 }
             }
         }
-
-        return;
     }
 
     // function normalizes a rotation quaternion and ensures q0 is non-negative
     template <typename Scalar>
-    inline void fqAeqNormqA(struct fquaternion* pqA) {
+    inline void normalise_quaternion_inplace(struct fquaternion* pqA) {
         Scalar fNorm;  // quaternion Norm
 
         // calculate the quaternion Norm
@@ -246,30 +241,26 @@ namespace filter::utilities {
             pqA->q2 = -pqA->q2;
             pqA->q3 = -pqA->q3;
         }
-
-        return;
     }
 
     // set a quaternion to the unit quaternion
-    inline void fqAeq1(struct fquaternion* pqA) {
+    inline void set_identity_quaternion(struct fquaternion* pqA) {
         pqA->q0 = 1.0;
         pqA->q1 = pqA->q2 = pqA->q3 = 0.0;
-
-        return;
     }
 
     // function compute the quaternion product qA * qB
-    inline void qAeqBxC(struct fquaternion* pqA, const struct fquaternion* pqB, const struct fquaternion* pqC) {
+    inline void A_eq_BxC_quat_product(struct fquaternion* pqA,
+                                      const struct fquaternion* pqB,
+                                      const struct fquaternion* pqC) {
         pqA->q0 = pqB->q0 * pqC->q0 - pqB->q1 * pqC->q1 - pqB->q2 * pqC->q2 - pqB->q3 * pqC->q3;
         pqA->q1 = pqB->q0 * pqC->q1 + pqB->q1 * pqC->q0 + pqB->q2 * pqC->q3 - pqB->q3 * pqC->q2;
         pqA->q2 = pqB->q0 * pqC->q2 - pqB->q1 * pqC->q3 + pqB->q2 * pqC->q0 + pqB->q3 * pqC->q1;
         pqA->q3 = pqB->q0 * pqC->q3 + pqB->q1 * pqC->q2 - pqB->q2 * pqC->q1 + pqB->q3 * pqC->q0;
-
-        return;
     }
 
     // function compute the quaternion product qA = qA * qB
-    inline void qAeqAxB(struct fquaternion* pqA, const struct fquaternion* pqB) {
+    inline void A_eq_AxB_quat_product(struct fquaternion* pqA, const struct fquaternion* pqB) {
         struct fquaternion qProd;
 
         // perform the quaternion product
@@ -280,12 +271,10 @@ namespace filter::utilities {
 
         // copy the result back into qA
         *pqA = qProd;
-
-        return;
     }
 
     // function compute the quaternion product conjg(qA) * qB
-    inline struct fquaternion qconjgAxB(const struct fquaternion* pqA, const struct fquaternion* pqB) {
+    inline struct fquaternion A_eq_AxB_quat_conj_product(const struct fquaternion* pqA, const struct fquaternion* pqB) {
         struct fquaternion qProd;
 
         qProd.q0 = pqA->q0 * pqB->q0 + pqA->q1 * pqB->q1 + pqA->q2 * pqB->q2 + pqA->q3 * pqB->q3;
@@ -314,13 +303,13 @@ namespace filter::utilities {
 
         // check for freefall special case where no solution is possible
         if (fmodGxyz == 0.0) {
-            f3x3matrixAeqI(fR);
+            set_identity3x3(fR);
             return;
         }
 
         // check for vertical up or down gimbal lock case
         if (fmodGyz == 0.0) {
-            f3x3matrixAeqScalar(fR, 0.0);
+            set_zero3x3(fR);
             fR[Y][Y] = 1.0;
             if (fGp[X] >= 0.0) {
                 fR[X][Z] = 1.0;
@@ -353,8 +342,6 @@ namespace filter::utilities {
         fR[X][Y] = 0.0;
         fR[Y][Y] = fR[Z][Z] * ftmp;
         fR[Z][Y] = -fR[Y][Z] * ftmp;
-
-        return;
     }
 
     // Android accelerometer 3DOF tilt function computing rotation matrix fR
@@ -363,7 +350,6 @@ namespace filter::utilities {
         // the Android tilt matrix is mathematically identical to the NED tilt matrix
         // the Android self-consistency twist occurs at 90 deg roll
         f3DOFTiltNED(fR, fGp);
-        return;
     }
 
     // Windows 8 accelerometer 3DOF tilt function computing rotation matrix fR
@@ -384,13 +370,13 @@ namespace filter::utilities {
 
         // check for freefall special case where no solution is possible
         if (fmodGxyz == 0.0) {
-            f3x3matrixAeqI(fR);
+            set_identity3x3(fR);
             return;
         }
 
         // check for vertical up or down gimbal lock case
         if (fmodGxz == 0.0) {
-            f3x3matrixAeqScalar(fR, 0.0);
+            set_zero3x3(fR);
             fR[X][X] = 1.0;
             if (fGp[Y] >= 0.0) {
                 fR[Y][Z] = -1.0;
@@ -430,13 +416,11 @@ namespace filter::utilities {
             fR[Y][Y] = -fR[Y][Y];
         }
         fR[Z][Y] = fR[Y][Z] * fR[Z][Z] * ftmp;
-
-        return;
     }
 
     // computes normalized rotation quaternion from a rotation vector (deg)
     template <typename Scalar>
-    inline void fQuaternionFromRotationVectorDeg(struct fquaternion* pq, const Scalar rvecdeg[], Scalar fscaling) {
+    inline void quat_from_rot_vec(struct fquaternion* pq, const Scalar rvecdeg[], Scalar fscaling) {
         Scalar fetadeg;     // rotation angle (deg)
         Scalar fetarad;     // rotation angle (rad)
         Scalar fetarad2;    // eta (rad)^2
@@ -493,13 +477,11 @@ namespace filter::utilities {
             // rounding errors are present
             pq->q0 = 0.0;
         }
-
-        return;
     }
 
     // compute the orientation quaternion from a 3x3 rotation matrix
     template <typename Scalar>
-    inline void fQuaternionFromRotationMatrix(Scalar R[][3], struct fquaternion* pq) {
+    inline void quat_from_rot_mat(Scalar R[][3], struct fquaternion* pq) {
         Scalar fq0sq;     // q0^2
         Scalar recip4q0;  // 1/4q0
 
@@ -535,13 +517,11 @@ namespace filter::utilities {
             if ((R[X][Y] - R[Y][X]) < 0.0)
                 pq->q3 = -pq->q3;
         }  // end of special case
-
-        return;
     }
 
     // compute the rotation matrix from an orientation quaternion
     template <typename Scalar>
-    inline void fRotationMatrixFromQuaternion(Scalar R[][3], const struct fquaternion* pq) {
+    inline void rot_mat_from_quat(Scalar R[][3], const struct fquaternion* pq) {
         Scalar f2q;
         Scalar f2q0q0, f2q0q1, f2q0q2, f2q0q3;
         Scalar f2q1q1, f2q1q2, f2q1q3;
@@ -573,79 +553,11 @@ namespace filter::utilities {
         R[Z][X] = f2q1q3 + f2q0q2;
         R[Z][Y] = f2q2q3 - f2q0q1;
         R[Z][Z] = f2q0q0 + f2q3q3 - 1.0;
-
-        return;
-    }
-
-    // function calculate the rotation vector from a rotation matrix
-    template <typename Scalar>
-    inline void fRotationVectorDegFromRotationMatrix(Scalar R[][3], Scalar rvecdeg[]) {
-        Scalar ftrace;    // trace of the rotation matrix
-        Scalar fetadeg;   // rotation angle eta (deg)
-        Scalar fmodulus;  // modulus of axis * angle vector = 2|sin(eta)|
-        Scalar ftmp;      // scratch variable
-
-        // calculate the trace of the rotation matrix = 1+2cos(eta) in range -1 to +3
-        // and eta (deg) in range 0 to 180 deg inclusive
-        // checking for rounding errors that might take the trace outside this range
-        ftrace = R[X][X] + R[Y][Y] + R[Z][Z];
-        if (ftrace >= 3.0) {
-            fetadeg = 0.0;
-        }
-        else if (ftrace <= -1.0) {
-            fetadeg = 180.0;
-        }
-        else {
-            fetadeg = std::acos(0.5 * (ftrace - 1.0)) * FRADTODEG;
-        }
-
-        // set the rvecdeg vector to differences across the diagonal = 2*n*sin(eta)
-        // and calculate its modulus equal to 2|sin(eta)|
-        // the modulus approaches zero near 0 and 180 deg (when sin(eta) approaches zero)
-        rvecdeg[X] = R[Y][Z] - R[Z][Y];
-        rvecdeg[Y] = R[Z][X] - R[X][Z];
-        rvecdeg[Z] = R[X][Y] - R[Y][X];
-        fmodulus   = std::sqrt(rvecdeg[X] * rvecdeg[X] + rvecdeg[Y] * rvecdeg[Y] + rvecdeg[Z] * rvecdeg[Z]);
-
-        // normalize the rotation vector for general, 0 deg and 180 deg rotation cases
-        if (fmodulus > SMALLMODULUS) {
-            // general case away from 0 and 180 deg rotation
-            ftmp = fetadeg / fmodulus;
-            rvecdeg[X] *= ftmp;  // set x component to eta(deg) * nx
-            rvecdeg[Y] *= ftmp;  // set y component to eta(deg) * ny
-            rvecdeg[Z] *= ftmp;  // set z component to eta(deg) * nz
-        }                        // end of general case
-        else if (ftrace >= 0.0) {
-            // near 0 deg rotation (trace = 3): matrix is nearly identity matrix
-            // R[Y][Z]-R[Z][Y]=2*nx*eta(rad) and similarly for other components
-            ftmp = 0.5 * FRADTODEG;
-            rvecdeg[X] *= ftmp;
-            rvecdeg[Y] *= ftmp;
-            rvecdeg[Z] *= ftmp;
-        }  // end of zero deg case
-        else {
-            // near 180 deg (trace = -1): matrix is nearly symmetric
-            // calculate the absolute value of the components of the axis-angle vector
-            rvecdeg[X] = 180.0 * std::sqrt(std::abs(0.5 * (R[X][X] + 1.0)));
-            rvecdeg[Y] = 180.0 * std::sqrt(std::abs(0.5 * (R[Y][Y] + 1.0)));
-            rvecdeg[Z] = 180.0 * std::sqrt(std::abs(0.5 * (R[Z][Z] + 1.0)));
-
-            // correct the signs of the three components by examining the signs of differenced off-diagonal terms
-            if ((R[Y][Z] - R[Z][Y]) < 0.0)
-                rvecdeg[X] = -rvecdeg[X];
-            if ((R[Z][X] - R[X][Z]) < 0.0)
-                rvecdeg[Y] = -rvecdeg[Y];
-            if ((R[X][Y] - R[Y][X]) < 0.0)
-                rvecdeg[Z] = -rvecdeg[Z];
-
-        }  // end of 180 deg case
-
-        return;
     }
 
     // computes rotation vector (deg) from rotation quaternion
     template <typename Scalar>
-    inline void fRotationVectorDegFromQuaternion(struct fquaternion* pq, Scalar rvecdeg[]) {
+    inline void rot_vec_deg_from_quat(struct fquaternion* pq, Scalar rvecdeg[]) {
         Scalar fetarad;     // rotation angle (rad)
         Scalar fetadeg;     // rotation angle (deg)
         Scalar sinhalfeta;  // sin(eta/2)
@@ -684,86 +596,8 @@ namespace filter::utilities {
             rvecdeg[Y] = pq->q2 * ftmp;
             rvecdeg[Z] = pq->q3 * ftmp;
         }
-
-        return;
     }
 
-    // function low pass filters an orientation quaternion and computes virtual gyro rotation rate
-    template <typename Scalar>
-    inline void fLPFOrientationQuaternion(struct fquaternion* pq,
-                                          struct fquaternion* pLPq,
-                                          Scalar flpf,
-                                          Scalar fdeltat,
-                                          int loopcounter) {
-        // local variables
-        struct fquaternion fdeltaq;  // delta rotation quaternion
-        Scalar rvecdeg[3];           // rotation vector (deg)
-        Scalar ftmp;                 // scratch variable
-
-        // initialize delay line on first pass: LPq[n]=q[n]
-        if (loopcounter == 0) {
-            *pLPq = *pq;
-        }
-
-        // set fdeltaqn to the delta rotation quaternion conjg(fLPq[n-1) . fqn
-        fdeltaq = filter::utilities::qconjgAxB(pLPq, pq);
-        if (fdeltaq.q0 < 0.0) {
-            fdeltaq.q0 = -fdeltaq.q0;
-            fdeltaq.q1 = -fdeltaq.q1;
-            fdeltaq.q2 = -fdeltaq.q2;
-            fdeltaq.q3 = -fdeltaq.q3;
-        }
-
-        // set ftmp to a scaled lpf value which equals flpf in the limit of small rotations (q0=1)
-        // but which rises as the delta rotation angle increases (q0 tends to zero)
-        ftmp = flpf + 0.75 * (1.0 - fdeltaq.q0);
-        if (ftmp > 1.0) {
-            ftmp = 1.0;
-        }
-
-        // scale the delta rotation by the corrected lpf value
-        fdeltaq.q1 *= ftmp;
-        fdeltaq.q2 *= ftmp;
-        fdeltaq.q3 *= ftmp;
-
-        // compute the scalar component q0
-        ftmp = fdeltaq.q1 * fdeltaq.q1 + fdeltaq.q2 * fdeltaq.q2 + fdeltaq.q3 * fdeltaq.q3;
-        if (ftmp <= 1.0) {
-            // normal case
-            fdeltaq.q0 = std::sqrt(1.0 - ftmp);
-        }
-        else {
-            // rounding errors present so simply set scalar component to 0
-            fdeltaq.q0 = 0.0;
-        }
-
-        // calculate the delta rotation vector from fdeltaqn and the virtual gyro angular velocity (deg/s)
-        fRotationVectorDegFromQuaternion(&fdeltaq, rvecdeg);
-        ftmp = 1.0 / fdeltat;
-
-        // set LPq[n] = LPq[n-1] . deltaq[n]
-        qAeqAxB(pLPq, &fdeltaq);
-
-        // renormalize the low pass filtered quaternion to prevent error accumulation
-        // the renormalization function ensures that q0 is non-negative
-        filter::utilities::fqAeqNormqA<Scalar>(pLPq);
-
-        return;
-    }
-
-    // function low pass filters a scalar
-    template <typename Scalar>
-    inline void fLPFScalar(Scalar* pfS, Scalar* pfLPS, Scalar flpf, int loopcounter) {
-        // set S[LP,n]=S[n] on first pass
-        if (loopcounter == 0) {
-            *pfLPS = *pfS;
-        }
-
-        // apply the exponential low pass filter
-        *pfLPS += flpf * (*pfS - *pfLPS);
-
-        return;
-    }
 }  // namespace filter::utilities
 
 #endif  // UTILITIES_HPP
