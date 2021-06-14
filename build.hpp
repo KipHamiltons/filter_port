@@ -60,12 +60,4 @@ static constexpr double ONEOVER3840  = 0.0002604166667;   // 1 / 3840
 static constexpr double ONEOVERROOT2 = 0.707106781;       // 1/sqrt(2)
 static constexpr double ROOT3OVER2   = 0.866025403784;    // sqrt(3)/2
 
-// quaternion structure definition
-struct fquaternion {
-    double q0 = 1.0;  // scalar component
-    double q1 = 0.0;  // x vector component
-    double q2 = 0.0;  // y vector component
-    double q3 = 0.0;  // z vector component
-};
-
 #endif  // BUILD_HPP

@@ -26,6 +26,9 @@
 #ifndef ORIENTATION_FILTER_HPP
 #define ORIENTATION_FILTER_HPP
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+
 #include "build.hpp"
 #include "utilities.hpp"
 namespace filter::kalman {
@@ -68,34 +71,34 @@ namespace filter::kalman {
     class OrientationFilter {
     public:
         // orientation matrix, quaternion and rotation vector
-        Scalar posterior_orientation_mat[3][3];         // a posteriori  rotation matrix
-        struct fquaternion posterior_orientation_quat;  // a posteriori orientation quaternion
-        Scalar fbPl[3];                                 // gyro offset (deg/s)
-        Scalar fThErrPl[3];                             // orientation error (deg)
-        Scalar fbErrPl[3];                              // gyro offset error (deg/s)
+        Scalar posterior_orientation_mat[3][3];                // a posteriori  rotation matrix
+        Eigen::Quaternion<Scalar> posterior_orientation_quat;  // a posteriori orientation quaternion
+        Scalar fbPl[3];                                        // gyro offset (deg/s)
+        Scalar fThErrPl[3];                                    // orientation error (deg)
+        Scalar fbErrPl[3];                                     // gyro offset error (deg/s)
 
-        Scalar fRMi[3][3];           // a priori rotation matrix
-        struct fquaternion fqMi;     // a priori orientation quaternion
-        struct fquaternion fDeltaq;  // delta a priori or a posteriori quaternion
-        Scalar faSePl[3];            // linear acceleration (g, sensor frame)
-        Scalar faErrSePl[3];         // linear acceleration error (g, sensor frame)
-        Scalar fgErrSeMi[3];         // difference (g, sensor frame) of gravity vector (accel)
-                                     // and gravity vector (gyro)
-        Scalar fgSeGyMi[3];          // gravity vector (g, sensor frame) measurement from gyro
-        Scalar faSeMi[3];            // linear acceleration (g, sensor frame)
-        Scalar fQvAA;                // accelerometer terms of Qv
-        Scalar fPPlus9x9[9][9];      // covariance matrix P+
-        Scalar fK9x3[9][3];          // kalman filter gain matrix K
-        Scalar fQw9x9[9][9];         // covariance matrix Qw
-        Scalar fC3x9[3][9];          // measurement matrix C
-        Scalar fcasq;                // FCA * FCA;
-        Scalar fFastdeltat;          // sensor sampling interval (s) = 1 / SENSORFS
-        Scalar fdeltat;              // kalman filter sampling interval (s) = OVERSAMPLE_RATIO /
-                                     // SENSORFS
-        Scalar fdeltatsq;            // fdeltat * fdeltat;
-        Scalar fQwbplusQvG;          // FQWB + FQVG;
-        int iFirstOrientationLock;   // denotes that 6DOF orientation has locked to 3DOF
-        int resetflag;               // flag to request re-initialization on next pass
+        Scalar fRMi[3][3];                  // a priori rotation matrix
+        Eigen::Quaternion<Scalar> fqMi;     // a priori orientation quaternion
+        Eigen::Quaternion<Scalar> fDeltaq;  // delta a priori or a posteriori quaternion
+        Scalar faSePl[3];                   // linear acceleration (g, sensor frame)
+        Scalar faErrSePl[3];                // linear acceleration error (g, sensor frame)
+        Scalar fgErrSeMi[3];                // difference (g, sensor frame) of gravity vector (accel)
+                                            // and gravity vector (gyro)
+        Scalar fgSeGyMi[3];                 // gravity vector (g, sensor frame) measurement from gyro
+        Scalar faSeMi[3];                   // linear acceleration (g, sensor frame)
+        Scalar fQvAA;                       // accelerometer terms of Qv
+        Scalar fPPlus9x9[9][9];             // covariance matrix P+
+        Scalar fK9x3[9][3];                 // kalman filter gain matrix K
+        Scalar fQw9x9[9][9];                // covariance matrix Qw
+        Scalar fC3x9[3][9];                 // measurement matrix C
+        Scalar fcasq;                       // FCA * FCA;
+        Scalar fFastdeltat;                 // sensor sampling interval (s) = 1 / SENSORFS
+        Scalar fdeltat;                     // kalman filter sampling interval (s) = OVERSAMPLE_RATIO /
+                                            // SENSORFS
+        Scalar fdeltatsq;                   // fdeltat * fdeltat;
+        Scalar fQwbplusQvG;                 // FQWB + FQVG;
+        int iFirstOrientationLock;          // denotes that 6DOF orientation has locked to 3DOF
+        int resetflag;                      // flag to request re-initialization on next pass
 
         void init_filter(int iSensorFS, int iOverSampleRatio) {
             int i, j;  // loop counters
@@ -120,7 +123,7 @@ namespace filter::kalman {
 
             // zero a posteriori orientation, error vector xe+ (thetae+, be+, ae+) and b+
             set_identity3x3(posterior_orientation_mat);
-            set_identity_quaternion(&(posterior_orientation_quat));
+            set_identity_quaternion(posterior_orientation_quat);
             for (i = X; i <= Z; i++) {
                 fThErrPl[i] = fbErrPl[i] = faErrSePl[i] = fbPl[i] = 0.0;
             }
@@ -209,7 +212,7 @@ namespace filter::kalman {
                 }
 
                 // get the orientation quaternion from the orientation matrix
-                quat_from_rot_mat(posterior_orientation_mat, &(posterior_orientation_quat));
+                quat_from_rot_mat(posterior_orientation_mat, posterior_orientation_quat);
 
                 // set the orientation lock flag so this initial alignment is only performed once
                 iFirstOrientationLock = 1;
@@ -230,14 +233,14 @@ namespace filter::kalman {
             }
 
             // compute the incremental quaternion fDeltaq from the rotation vector
-            quat_from_rot_vec(&(fDeltaq), rvec, 1.0);
+            quat_from_rot_vec(fDeltaq, rvec, 1.0);
 
             // incrementally rotate the a priori orientation quaternion fqMi
             // the a posteriori orientation is re-normalized later so this update is stable
-            A_eq_AxB_quat_product(&(fqMi), &(fDeltaq));
+            A_eq_AxB_quat_product(fqMi, fDeltaq);
 
             // get the a priori rotation matrix from the a priori quaternion
-            rot_mat_from_quat(fRMi, &(fqMi));
+            rot_mat_from_quat(fRMi, fqMi);
 
             // *********************************************************************************
             // calculate a priori gyro and accelerometer estimates of the gravity vector
@@ -457,18 +460,18 @@ namespace filter::kalman {
             // *********************************************************************************
 
             // get the a posteriori delta quaternion
-            quat_from_rot_vec(&(fDeltaq), fThErrPl, -1.0);
+            quat_from_rot_vec(fDeltaq, fThErrPl, -1.0);
 
             // compute the a posteriori orientation quaternion posterior_orientation_quat = fqMi * Deltaq(-thetae+)
             // the resulting quaternion may have negative scalar component q0
-            A_eq_BxC_quat_product(&(posterior_orientation_quat), &(fqMi), &(fDeltaq));
+            A_eq_BxC_quat_product(posterior_orientation_quat, fqMi, fDeltaq);
 
             // normalize the a posteriori orientation quaternion to stop error propagation
             // the renormalization function ensures that the scalar component q0 is non-negative
-            normalise_quaternion_inplace<Scalar>(&(posterior_orientation_quat));
+            normalise_quaternion_inplace<Scalar>(posterior_orientation_quat);
 
             // compute the a posteriori rotation matrix from the a posteriori quaternion
-            rot_mat_from_quat(posterior_orientation_mat, &(posterior_orientation_quat));
+            rot_mat_from_quat(posterior_orientation_mat, posterior_orientation_quat);
 
             // update the a posteriori gyro offset vector b+ and linear acceleration vector a+ (sensor frame)
             for (i = X; i <= Z; i++) {

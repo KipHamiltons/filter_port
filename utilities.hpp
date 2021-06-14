@@ -49,6 +49,21 @@ namespace filter::utilities {
         return asin_deg;
     }
 
+    template <typename Scalar>
+    [[nodiscard]] inline std::tuple<Scalar, Scalar, Scalar, Scalar> quat_to_coeffs(Eigen::Quaternion<Scalar> q) {
+        const Scalar q0                          = q.w();
+        const Eigen::Matrix<Scalar, 3, 1> coeffs = q.vec();
+        return {q0, coeffs[0], coeffs[1], coeffs[2]};
+    }
+
+    template <typename Scalar>
+    [[nodiscard]] inline Eigen::Quaternion<Scalar> coeffs_to_quat(Scalar q0, Scalar q1, Scalar q2, Scalar q3) {
+        auto out  = Eigen::Quaternion<Scalar>();
+        out.w()   = q0;
+        out.vec() = Eigen::Matrix<Scalar, 3, 1>(q1, q2, q3);
+        return out;
+    }
+
 
     // function sets the 3x3 matrix A to the identity matrix
     template <typename Scalar>
@@ -215,74 +230,70 @@ namespace filter::utilities {
 
     // function normalizes a rotation quaternion and ensures q0 is non-negative
     template <typename Scalar>
-    inline void normalise_quaternion_inplace(struct fquaternion* pqA) {
-        Scalar fNorm;  // quaternion Norm
+    inline void normalise_quaternion_inplace(Eigen::Quaternion<Scalar>& pqA) {
+        Scalar fNorm, q0, q1, q2, q3;  // quaternion Norm
+        std::tie(q0, q1, q2, q3) = quat_to_coeffs(pqA);
 
         // calculate the quaternion Norm
-        fNorm = std::sqrt(pqA->q0 * pqA->q0 + pqA->q1 * pqA->q1 + pqA->q2 * pqA->q2 + pqA->q3 * pqA->q3);
+        fNorm = std::sqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
         if (fNorm > CORRUPTQUAT) {
             // general case
             fNorm = 1.0 / fNorm;
-            pqA->q0 *= fNorm;
-            pqA->q1 *= fNorm;
-            pqA->q2 *= fNorm;
-            pqA->q3 *= fNorm;
+            q0 *= fNorm;
+            q1 *= fNorm;
+            q2 *= fNorm;
+            q3 *= fNorm;
         }
         else {
             // return with identity quaternion since the quaternion is corrupted
-            pqA->q0 = 1.0;
-            pqA->q1 = pqA->q2 = pqA->q3 = 0.0;
+            q0 = 1.0;
+            q1 = q2 = q3 = 0.0;
         }
 
         // correct a negative scalar component if the function was called with negative q0
-        if (pqA->q0 < 0.0) {
-            pqA->q0 = -pqA->q0;
-            pqA->q1 = -pqA->q1;
-            pqA->q2 = -pqA->q2;
-            pqA->q3 = -pqA->q3;
+        if (q0 < 0.0) {
+            q0 = -q0;
+            q1 = -q1;
+            q2 = -q2;
+            q3 = -q3;
         }
+        pqA = coeffs_to_quat(q0, q1, q2, q3);
     }
 
     // set a quaternion to the unit quaternion
-    inline void set_identity_quaternion(struct fquaternion* pqA) {
-        pqA->q0 = 1.0;
-        pqA->q1 = pqA->q2 = pqA->q3 = 0.0;
+    template <typename Scalar>
+    inline void set_identity_quaternion(Eigen::Quaternion<Scalar>& pqA) {
+        pqA = Eigen::Quaternion<Scalar>::Identity();
     }
 
     // function compute the quaternion product qA * qB
-    inline void A_eq_BxC_quat_product(struct fquaternion* pqA,
-                                      const struct fquaternion* pqB,
-                                      const struct fquaternion* pqC) {
-        pqA->q0 = pqB->q0 * pqC->q0 - pqB->q1 * pqC->q1 - pqB->q2 * pqC->q2 - pqB->q3 * pqC->q3;
-        pqA->q1 = pqB->q0 * pqC->q1 + pqB->q1 * pqC->q0 + pqB->q2 * pqC->q3 - pqB->q3 * pqC->q2;
-        pqA->q2 = pqB->q0 * pqC->q2 - pqB->q1 * pqC->q3 + pqB->q2 * pqC->q0 + pqB->q3 * pqC->q1;
-        pqA->q3 = pqB->q0 * pqC->q3 + pqB->q1 * pqC->q2 - pqB->q2 * pqC->q1 + pqB->q3 * pqC->q0;
+    template <typename Scalar>
+    inline void A_eq_BxC_quat_product(Eigen::Quaternion<Scalar>& pqA,
+                                      const Eigen::Quaternion<Scalar> pqB,
+                                      const Eigen::Quaternion<Scalar> pqC) {
+        const auto [b_q0, b_q1, b_q2, b_q3] = quat_to_coeffs(pqB);
+        const auto [c_q0, c_q1, c_q2, c_q3] = quat_to_coeffs(pqC);
+        const Scalar a_q0                   = b_q0 * c_q0 - b_q1 * c_q1 - b_q2 * c_q2 - b_q3 * c_q3;
+        const Scalar a_q1                   = b_q0 * c_q1 + b_q1 * c_q0 + b_q2 * c_q3 - b_q3 * c_q2;
+        const Scalar a_q2                   = b_q0 * c_q2 - b_q1 * c_q3 + b_q2 * c_q0 + b_q3 * c_q1;
+        const Scalar a_q3                   = b_q0 * c_q3 + b_q1 * c_q2 - b_q2 * c_q1 + b_q3 * c_q0;
+        pqA                                 = coeffs_to_quat(a_q0, a_q1, a_q2, a_q3);
     }
 
     // function compute the quaternion product qA = qA * qB
-    inline void A_eq_AxB_quat_product(struct fquaternion* pqA, const struct fquaternion* pqB) {
-        struct fquaternion qProd;
+    template <typename Scalar>
+    inline void A_eq_AxB_quat_product(Eigen::Quaternion<Scalar>& pqA, const Eigen::Quaternion<Scalar>& pqB) {
+        const auto [a_q0, a_q1, a_q2, a_q3] = quat_to_coeffs(pqA);
+        const auto [b_q0, b_q1, b_q2, b_q3] = quat_to_coeffs(pqB);
 
         // perform the quaternion product
-        qProd.q0 = pqA->q0 * pqB->q0 - pqA->q1 * pqB->q1 - pqA->q2 * pqB->q2 - pqA->q3 * pqB->q3;
-        qProd.q1 = pqA->q0 * pqB->q1 + pqA->q1 * pqB->q0 + pqA->q2 * pqB->q3 - pqA->q3 * pqB->q2;
-        qProd.q2 = pqA->q0 * pqB->q2 - pqA->q1 * pqB->q3 + pqA->q2 * pqB->q0 + pqA->q3 * pqB->q1;
-        qProd.q3 = pqA->q0 * pqB->q3 + pqA->q1 * pqB->q2 - pqA->q2 * pqB->q1 + pqA->q3 * pqB->q0;
+        const Scalar q0 = a_q0 * b_q0 - a_q1 * b_q1 - a_q2 * b_q2 - a_q3 * b_q3;
+        const Scalar q1 = a_q0 * b_q1 + a_q1 * b_q0 + a_q2 * b_q3 - a_q3 * b_q2;
+        const Scalar q2 = a_q0 * b_q2 - a_q1 * b_q3 + a_q2 * b_q0 + a_q3 * b_q1;
+        const Scalar q3 = a_q0 * b_q3 + a_q1 * b_q2 - a_q2 * b_q1 + a_q3 * b_q0;
 
         // copy the result back into qA
-        *pqA = qProd;
-    }
-
-    // function compute the quaternion product conjg(qA) * qB
-    inline struct fquaternion A_eq_AxB_quat_conj_product(const struct fquaternion* pqA, const struct fquaternion* pqB) {
-        struct fquaternion qProd;
-
-        qProd.q0 = pqA->q0 * pqB->q0 + pqA->q1 * pqB->q1 + pqA->q2 * pqB->q2 + pqA->q3 * pqB->q3;
-        qProd.q1 = pqA->q0 * pqB->q1 - pqA->q1 * pqB->q0 - pqA->q2 * pqB->q3 + pqA->q3 * pqB->q2;
-        qProd.q2 = pqA->q0 * pqB->q2 + pqA->q1 * pqB->q3 - pqA->q2 * pqB->q0 - pqA->q3 * pqB->q1;
-        qProd.q3 = pqA->q0 * pqB->q3 - pqA->q1 * pqB->q2 + pqA->q2 * pqB->q1 - pqA->q3 * pqB->q0;
-
-        return qProd;
+        pqA = coeffs_to_quat(q0, q1, q2, q3);
     }
 
     // Aerospace NED accelerometer 3DOF tilt function computing rotation matrix fR
@@ -420,7 +431,7 @@ namespace filter::utilities {
 
     // computes normalized rotation quaternion from a rotation vector (deg)
     template <typename Scalar>
-    inline void quat_from_rot_vec(struct fquaternion* pq, const Scalar rvecdeg[], Scalar fscaling) {
+    inline void quat_from_rot_vec(Eigen::Quaternion<Scalar>& pq, const Scalar rvecdeg[], Scalar fscaling) {
         Scalar fetadeg;     // rotation angle (deg)
         Scalar fetarad;     // rotation angle (rad)
         Scalar fetarad2;    // eta (rad)^2
@@ -452,96 +463,100 @@ namespace filter::utilities {
             // use exact calculation
             sinhalfeta = (Scalar) std::sin(0.5 * fetarad);
         }
-
+        Scalar q0, q1, q2, q3;
         // compute the vector quaternion components q1, q2, q3
         if (fetadeg != 0.0) {
             // general case with non-zero rotation angle
-            ftmp   = fscaling * sinhalfeta / fetadeg;
-            pq->q1 = rvecdeg[X] * ftmp;  // q1 = nx * sin(eta/2)
-            pq->q2 = rvecdeg[Y] * ftmp;  // q2 = ny * sin(eta/2)
-            pq->q3 = rvecdeg[Z] * ftmp;  // q3 = nz * sin(eta/2)
+            ftmp = fscaling * sinhalfeta / fetadeg;
+            q1   = rvecdeg[X] * ftmp;  // q1 = nx * sin(eta/2)
+            q2   = rvecdeg[Y] * ftmp;  // q2 = ny * sin(eta/2)
+            q3   = rvecdeg[Z] * ftmp;  // q3 = nz * sin(eta/2)
         }
         else {
             // zero rotation angle giving zero vector component
-            pq->q1 = pq->q2 = pq->q3 = 0.0;
+            q1 = q2 = q3 = 0.0;
         }
 
         // compute the scalar quaternion component q0 by explicit normalization
         // taking care to avoid rounding errors giving negative operand to sqrt
-        fvecsq = pq->q1 * pq->q1 + pq->q2 * pq->q2 + pq->q3 * pq->q3;
+        fvecsq = q1 * q1 + q2 * q2 + q3 * q3;
         if (fvecsq <= 1.0) {
             // normal case
-            pq->q0 = std::sqrt(1.0 - fvecsq);
+            q0 = std::sqrt(1.0 - fvecsq);
         }
         else {
             // rounding errors are present
-            pq->q0 = 0.0;
+            q0 = 0.0;
         }
+        pq = coeffs_to_quat(q0, q1, q2, q3);
     }
 
     // compute the orientation quaternion from a 3x3 rotation matrix
     template <typename Scalar>
-    inline void quat_from_rot_mat(Scalar R[][3], struct fquaternion* pq) {
+    inline void quat_from_rot_mat(Scalar R[][3], Eigen::Quaternion<Scalar>& pq) {
         Scalar fq0sq;     // q0^2
         Scalar recip4q0;  // 1/4q0
+        Scalar q0, q1, q2, q3;
 
         // the quaternion is not explicitly normalized in this function on the assumption that it
         // is supplied with a normalized rotation matrix. if the rotation matrix is normalized then
         // the quaternion will also be normalized even if the case of small q0
 
         // get q0^2 and q0
-        fq0sq  = 0.25 * (1.0 + R[X][X] + R[Y][Y] + R[Z][Z]);
-        pq->q0 = std::sqrt(std::fabs(fq0sq));
+        fq0sq = 0.25 * (1.0 + R[X][X] + R[Y][Y] + R[Z][Z]);
+        q0    = std::sqrt(std::fabs(fq0sq));
 
         // normal case when q0 is not small meaning rotation angle not near 180 deg
-        if (pq->q0 > SMALLQ0) {
+        if (q0 > SMALLQ0) {
             // calculate q1 to q3
-            recip4q0 = 0.25 / pq->q0;
-            pq->q1   = recip4q0 * (R[Y][Z] - R[Z][Y]);
-            pq->q2   = recip4q0 * (R[Z][X] - R[X][Z]);
-            pq->q3   = recip4q0 * (R[X][Y] - R[Y][X]);
+            recip4q0 = 0.25 / q0;
+            q1       = recip4q0 * (R[Y][Z] - R[Z][Y]);
+            q2       = recip4q0 * (R[Z][X] - R[X][Z]);
+            q3       = recip4q0 * (R[X][Y] - R[Y][X]);
         }  // end of general case
         else {
             // special case of near 180 deg corresponds to nearly symmetric matrix
             // which is not numerically well conditioned for division by small q0
             // instead get absolute values of q1 to q3 from leading diagonal
-            pq->q1 = std::sqrt(std::fabs(0.5 * (1.0 + R[X][X]) - fq0sq));
-            pq->q2 = std::sqrt(std::fabs(0.5 * (1.0 + R[Y][Y]) - fq0sq));
-            pq->q3 = std::sqrt(std::fabs(0.5 * (1.0 + R[Z][Z]) - fq0sq));
+            q1 = std::sqrt(std::fabs(0.5 * (1.0 + R[X][X]) - fq0sq));
+            q2 = std::sqrt(std::fabs(0.5 * (1.0 + R[Y][Y]) - fq0sq));
+            q3 = std::sqrt(std::fabs(0.5 * (1.0 + R[Z][Z]) - fq0sq));
 
             // correct the signs of q1 to q3 by examining the signs of differenced off-diagonal terms
             if ((R[Y][Z] - R[Z][Y]) < 0.0)
-                pq->q1 = -pq->q1;
+                q1 = -q1;
             if ((R[Z][X] - R[X][Z]) < 0.0)
-                pq->q2 = -pq->q2;
+                q2 = -q2;
             if ((R[X][Y] - R[Y][X]) < 0.0)
-                pq->q3 = -pq->q3;
+                q3 = -q3;
         }  // end of special case
+        pq = coeffs_to_quat(q0, q1, q2, q3);
     }
 
     // compute the rotation matrix from an orientation quaternion
     template <typename Scalar>
-    inline void rot_mat_from_quat(Scalar R[][3], const struct fquaternion* pq) {
+    inline void rot_mat_from_quat(Scalar R[][3], const Eigen::Quaternion<Scalar>& pq) {
         Scalar f2q;
         Scalar f2q0q0, f2q0q1, f2q0q2, f2q0q3;
         Scalar f2q1q1, f2q1q2, f2q1q3;
         Scalar f2q2q2, f2q2q3;
         Scalar f2q3q3;
+        const auto [q0, q1, q2, q3] = quat_to_coeffs(pq);
 
         // calculate products
-        f2q    = 2.0 * pq->q0;
-        f2q0q0 = f2q * pq->q0;
-        f2q0q1 = f2q * pq->q1;
-        f2q0q2 = f2q * pq->q2;
-        f2q0q3 = f2q * pq->q3;
-        f2q    = 2.0 * pq->q1;
-        f2q1q1 = f2q * pq->q1;
-        f2q1q2 = f2q * pq->q2;
-        f2q1q3 = f2q * pq->q3;
-        f2q    = 2.0 * pq->q2;
-        f2q2q2 = f2q * pq->q2;
-        f2q2q3 = f2q * pq->q3;
-        f2q3q3 = 2.0 * pq->q3 * pq->q3;
+        f2q    = 2.0 * q0;
+        f2q0q0 = f2q * q0;
+        f2q0q1 = f2q * q1;
+        f2q0q2 = f2q * q2;
+        f2q0q3 = f2q * q3;
+        f2q    = 2.0 * q1;
+        f2q1q1 = f2q * q1;
+        f2q1q2 = f2q * q2;
+        f2q1q3 = f2q * q3;
+        f2q    = 2.0 * q2;
+        f2q2q2 = f2q * q2;
+        f2q2q3 = f2q * q3;
+        f2q3q3 = 2.0 * q3 * q3;
 
         // calculate the rotation matrix assuming the quaternion is normalized
         R[X][X] = f2q0q0 + f2q1q1 - 1.0;
@@ -557,21 +572,22 @@ namespace filter::utilities {
 
     // computes rotation vector (deg) from rotation quaternion
     template <typename Scalar>
-    inline void rot_vec_deg_from_quat(struct fquaternion* pq, Scalar rvecdeg[]) {
+    inline void rot_vec_deg_from_quat(const Eigen::Quaternion<Scalar>& pq, Scalar rvecdeg[]) {
         Scalar fetarad;     // rotation angle (rad)
         Scalar fetadeg;     // rotation angle (deg)
         Scalar sinhalfeta;  // sin(eta/2)
         Scalar ftmp;        // scratch variable
+        const auto [q0, q1, q2, q3] = quat_to_coeffs(pq);
 
         // calculate the rotation angle in the range 0 <= eta < 360 deg
-        if ((pq->q0 >= 1.0) || (pq->q0 <= -1.0)) {
+        if ((q0 >= 1.0) || (q0 <= -1.0)) {
             // rotation angle is 0 deg or 2*180 deg = 360 deg = 0 deg
             fetarad = 0.0;
             fetadeg = 0.0;
         }
         else {
             // general case returning 0 < eta < 360 deg
-            fetarad = 2.0 * acosf(pq->q0);
+            fetarad = 2.0 * acosf(q0);
             fetadeg = fetarad * FRADTODEG;
         }
 
@@ -592,9 +608,9 @@ namespace filter::utilities {
         else {
             // general case with non-zero rotation angle
             ftmp       = fetadeg / sinhalfeta;
-            rvecdeg[X] = pq->q1 * ftmp;
-            rvecdeg[Y] = pq->q2 * ftmp;
-            rvecdeg[Z] = pq->q3 * ftmp;
+            rvecdeg[X] = q1 * ftmp;
+            rvecdeg[Y] = q2 * ftmp;
+            rvecdeg[Z] = q3 * ftmp;
         }
     }
 
