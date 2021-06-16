@@ -59,7 +59,7 @@ int main() {
   struct SV_6DOF_GY_KALMAN filter {};
   // TODO clarify coord system - WIN8 has bad perf. NED/ANDROID good perf??
   static constexpr int16 COORDINATE_SYSTEM = NED;
-  static constexpr int16 SAMPLE_RATE = 2000;
+  static constexpr int16 SAMPLE_RATE = 200;
   // static constexpr int DECIMATION_FACTOR = 1;
 
   // Initialise the filter
